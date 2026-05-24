@@ -21,10 +21,10 @@ DRUG_ATTRIBUTES = {
         "proteinuria_efficacy": 8,
         "egfr_preservation": 7,        # interim; awaiting wk 106 readout
         "route_of_admin": 3,           # IV q8w
-        "dosing_frequency": 7,         # q8w beats oral daily
+        "dosing_frequency": 8,         # q8w is a meaningful advantage over daily oral therapy (Tarpeyo, Filspari, Fabhalta, Vanrafia)
         "safety_burden": 5,            # REMS for meningococcal infection
-        "mechanism_familiarity": 6,
-        "payer_access": 4,             # high-priced biologic
+        "mechanism_familiarity": 7,    # carryover prescriber familiarity from Alexion's aHUS/PNH franchise (same molecule)
+        "payer_access": 5,             # Alexion's nephrology biologic payer infrastructure already established for aHUS
     },
     "tarpeyo": {
         "proteinuria_efficacy": 6, "egfr_preservation": 6, "route_of_admin": 9,
