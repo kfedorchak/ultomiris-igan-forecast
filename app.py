@@ -111,9 +111,6 @@ def scenario_treated(yearly, scenario: str, scenario_probs: dict) -> float:
 
 # ──────────────────────────── source-of-business chart (inline) ────────
 
-# Excludes addon_to_existing from the plot — combination use is reported
-# separately (Combination Use Rate, see docs/methodology.md) to avoid
-# double-counting against stock-based views.
 _SOB_COLORS = {
     "treatment_naive": "#1F77B4",
     "switch_from_corticosteroid": "#8C564B",
@@ -124,7 +121,7 @@ _SOB_COLORS = {
 
 
 def _build_source_of_business_chart(forecast_years: list[int], params: dict) -> go.Figure:
-    """Stacked bar of Ultomiris new-start sources, descriptive attribution, addon excluded."""
+    """Stacked bar of Ultomiris new-start sources (descriptive attribution)."""
     launch_year = params["launch"]["us_launch_year"]
     post_launch = [y for y in forecast_years if y >= launch_year]
     mixes = {
@@ -145,21 +142,13 @@ def _build_source_of_business_chart(forecast_years: list[int], params: dict) -> 
         barmode="stack",
         title="Sources of New Ultomiris Patients (Descriptive Attribution)",
         xaxis=dict(title="Year", tickmode="linear", dtick=1),
-        yaxis=dict(title="Share of new starts (excl. addon)", tickformat=".0%", range=[0, 1]),
+        yaxis=dict(title="Share of new starts", tickformat=".0%", range=[0, 1]),
         template="plotly_white",
         height=440,
         margin=dict(b=110),
         legend=dict(orientation="h", yanchor="bottom", y=-0.4),
     )
     return fig
-
-
-def _combination_use_rate(forecast_years: list[int], params: dict) -> tuple[float, float]:
-    """Min/max addon_to_existing share across the post-launch forecast horizon."""
-    launch_year = params["launch"]["us_launch_year"]
-    post_launch = [y for y in forecast_years if y >= launch_year]
-    addons = [source_of_business_by_year(y - launch_year)["addon_to_existing"] for y in post_launch]
-    return min(addons), max(addons)
 
 
 # ──────────────────────────── slider defaults + reset callback ─────────
@@ -368,12 +357,6 @@ with col_sob:
     st.plotly_chart(
         _build_source_of_business_chart(forecast_years, params),
         width="stretch",
-    )
-    _combo_lo, _combo_hi = _combination_use_rate(forecast_years, params)
-    st.caption(
-        f"**Combination Use Rate:** ~{_combo_lo * 100:.0f}–{_combo_hi * 100:.0f}% of Ultomiris patients "
-        f"are addon-to-existing (excluded from the chart to avoid double-counting against the "
-        f"share-of-treated view). See `docs/methodology.md`."
     )
 with col_ana:
     st.plotly_chart(

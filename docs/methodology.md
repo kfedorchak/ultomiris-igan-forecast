@@ -6,18 +6,32 @@
 > mechanics, Gate #6 calibration). The sections below are the structurally-load-bearing
 > pieces that need to be readable before the rest is written.
 
-## Combination Use Rate
+## Combination Targeted Therapy Not Modeled
 
-The model parameterizes **addon-to-existing** use — Ultomiris combined with another
-targeted IgAN therapy rather than displacing it — at approximately **15–17%** across the
-forecast horizon. The rate is 17% at Ultomiris launch (2027) and decays linearly to 15% by
-year 8 post-launch via the early-to-mature mix interpolation in `core/source_of_business.py`.
+Combination targeted therapy is not modeled in v2. Patients who would adopt Ultomiris as
+an addon to existing targeted therapy are reclassified as switches from that therapy
+class, which better reflects real-world prescribing patterns for high-burden IV biologics
+in IgAN. Practically, payer access and clinical guideline support for layering a
+high-cost C5 inhibitor on top of an already-approved targeted IgAN therapy is limited:
+KDIGO 2024 recommends sequential rather than concurrent escalation, and US payer
+authorization for two simultaneous targeted IgAN therapies remains rare in the absence
+of compelling combination trial data.
 
-This rate is reported as a separate scalar metric rather than included as a stacked-bar
-bucket in the Source of New Ultomiris Patients chart, because addon patients also appear
-in another drug's active stock. Including them in the SoB stacked plot would imply they
-should also appear in stock-based views, creating double-counting against the Share of
-Treated Patients chart.
+Operationally, the v1 addon-to-existing bucket (which carried 0.15–0.17 of new Ultomiris
+starts across the forecast horizon) has been redistributed proportionally across the
+four `switch_from_*` categories in `core/source_of_business.py`. Each switch category
+receives `original + addon × (original / total_switches)`, preserving the relative
+weights of the mechanism classes. `treatment_naive` is unchanged. Both `EARLY_MIX` and
+`MATURE_MIX` sum to 1.00 after redistribution.
+
+This simplification also resolves the stacked-bar / stock-of-treated double-counting
+problem that the v1 addon bucket created: an addon patient appears in both Ultomiris's
+stock AND the source drug's stock, which the SoB stacked bar could not honestly
+represent. With addon removed, the SoB chart now sums to 100% with five mutually-exclusive
+buckets, all of which represent net flows that the Share of Treated chart's stock
+mechanics can accommodate (a switch is an outflow from the source drug + an inflow to
+Ultomiris, conceptually consistent even if v2 doesn't actually track the cross-drug
+outflow — see *Scope of Patient-Flow Modeling* below).
 
 ## Scope of Patient-Flow Modeling
 

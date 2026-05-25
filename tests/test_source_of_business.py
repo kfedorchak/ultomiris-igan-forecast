@@ -60,15 +60,14 @@ def test_treatment_naive_decreases_monotonically():
     assert vals == sorted(vals, reverse=True)
 
 
-def test_all_six_mechanism_buckets_present():
-    """Every output mix has the four mechanism switch buckets + naive + addon."""
+def test_all_five_mechanism_buckets_present():
+    """Every output mix has the four mechanism switch buckets + treatment_naive. Addon removed in v2."""
     expected_keys = {
         "treatment_naive",
         "switch_from_corticosteroid",
         "switch_from_endothelin",
         "switch_from_oral_complement",
         "switch_from_april_baff",
-        "addon_to_existing",
     }
     for ysl in (0, 4, 8, 12):
         assert set(source_of_business_by_year(ysl).keys()) == expected_keys
