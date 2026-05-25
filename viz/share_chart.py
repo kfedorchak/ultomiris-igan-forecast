@@ -1,38 +1,35 @@
-"""Competitive share-of-treated stacked area over the active drug set each year."""
+"""Share-of-treated stacked area chart (stock-based, not new-starts-based)."""
 
 import plotly.graph_objects as go
 
-from core.conjoint import (
-    compute_drug_utilities,
-    get_active_drugs_for_year,
-    utilities_to_shares,
-)
 from viz.formatting import COMPETITOR_PALETTE
 
 
 def build_share_chart(
     forecast_years: list[int],
-    params: dict,
-    competitor_launch_years: dict[str, int],
-    drug_attributes: dict[str, dict[str, float]],
+    drug_stocks: dict[str, dict[int, float]],
+    launch_years: dict[str, int] | None = None,
 ) -> go.Figure:
-    """Stacked area of softmax share per year. Drugs not yet launched contribute 0."""
-    utilities = compute_drug_utilities(
-        drug_attributes, params["conjoint"]["attribute_weights"]
-    )
+    """Stacked area of per-drug share of active treated stock per year.
 
-    share_by_year = {
-        year: utilities_to_shares(
-            utilities,
-            params["conjoint"]["logit_lambda"],
-            get_active_drugs_for_year(year, competitor_launch_years),
-        )
-        for year in forecast_years
-    }
+    `drug_stocks` is the {drug: {year: active stock}} output of
+    core.revenue.compute_per_drug_treated_stocks. `launch_years` orders the
+    legend so first-launched drugs sit at the bottom of the stack.
+    """
+    share_by_year: dict[int, dict[str, float]] = {}
+    for year in forecast_years:
+        total = sum(drug_stocks[d].get(year, 0.0) for d in drug_stocks)
+        if total > 0:
+            share_by_year[year] = {
+                d: drug_stocks[d].get(year, 0.0) / total for d in drug_stocks
+            }
+        else:
+            share_by_year[year] = {d: 0.0 for d in drug_stocks}
 
-    drugs_order = sorted(
-        competitor_launch_years.keys(), key=lambda d: competitor_launch_years[d]
-    )
+    if launch_years is not None:
+        drugs_order = sorted(drug_stocks.keys(), key=lambda d: launch_years.get(d, 9999))
+    else:
+        drugs_order = sorted(drug_stocks.keys())
 
     fig = go.Figure()
     for drug in drugs_order:
@@ -49,12 +46,13 @@ def build_share_chart(
         )
 
     fig.update_layout(
-        title="Competitive Share of Treated",
-        xaxis_title="Year",
+        title="Share of Treated Patients (Stock-Derived)",
+        xaxis=dict(title="Year", tickmode="linear", dtick=1),
         yaxis_title="Share",
         yaxis_tickformat=".0%",
         template="plotly_white",
-        height=400,
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3),
+        height=440,
+        margin=dict(b=110),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.4),
     )
     return fig

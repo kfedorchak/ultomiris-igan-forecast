@@ -10,7 +10,12 @@ import streamlit as st
 
 from core.bass_model import fit_bass_to_tarpeyo
 from core.patient_flow import compute_patient_pool
-from core.revenue import compute_class_new_starts_per_year, compute_treated_stock, run_forecast
+from core.revenue import (
+    compute_class_new_starts_per_year,
+    compute_per_drug_treated_stocks,
+    compute_treated_stock,
+    run_forecast,
+)
 from core.source_of_business import source_of_business_by_year
 from data.assumptions import CLASS_TREATED_AT_ULTOMIRIS_LAUNCH, DEFAULTS, TARPEYO_MARKET_POTENTIAL_2022
 from data.competitive_landscape import COMPETITOR_LAUNCH_YEARS, DRUG_ATTRIBUTES
@@ -51,6 +56,21 @@ def cached_tornado(params_hash: str, _params: dict, market_potential: float, sce
 
 
 @st.cache_data
+def cached_per_drug_stocks(params_hash: str, _params: dict, market_potential: float) -> dict[str, dict[int, float]]:
+    """Per-drug active treated stocks per year (stock-based share-of-treated chart input)."""
+    p_fit, q_fit = fit_bass_to_tarpeyo(
+        load_tarpeyo(),
+        market_potential,
+        fallback_p=_params["bass"]["innovation_p_default"],
+        fallback_q=_params["bass"]["imitation_q_default"],
+    )
+    fs = _params["launch"]["forecast_start_year"]
+    horizon = _params["launch"]["forecast_horizon_years"]
+    years = list(range(fs, fs + horizon))
+    return compute_per_drug_treated_stocks(years, _params, p_fit, q_fit)
+
+
+@st.cache_data
 def cached_class_active(params_hash: str, _params: dict, market_potential: float) -> dict[int, float]:
     """Class-wide active treated patients per year (Bass over total_M + persistence cohorts, no share)."""
     p_fit, q_fit = fit_bass_to_tarpeyo(
@@ -63,13 +83,12 @@ def cached_class_active(params_hash: str, _params: dict, market_potential: float
     horizon = _params["launch"]["forecast_horizon_years"]
     years = list(range(fs, fs + horizon))
     class_new = compute_class_new_starts_per_year(years, _params, p_fit, q_fit)
-    launch_year = _params["launch"]["us_launch_year"]
     return compute_treated_stock(
         years,
         class_new,
         _params["persistence"]["year_1_persistence"],
         _params["persistence"]["year_2plus_persistence"],
-        veteran_cohort=(launch_year, CLASS_TREATED_AT_ULTOMIRIS_LAUNCH),
+        veteran_cohort=(fs, CLASS_TREATED_AT_ULTOMIRIS_LAUNCH),
     )
 
 
@@ -92,18 +111,20 @@ def scenario_treated(yearly, scenario: str, scenario_probs: dict) -> float:
 
 # ──────────────────────────── source-of-business chart (inline) ────────
 
+# Excludes addon_to_existing from the plot — combination use is reported
+# separately (Combination Use Rate, see docs/methodology.md) to avoid
+# double-counting against stock-based views.
 _SOB_COLORS = {
     "treatment_naive": "#1F77B4",
     "switch_from_corticosteroid": "#8C564B",
     "switch_from_endothelin": "#E377C2",
     "switch_from_oral_complement": "#9467BD",
     "switch_from_april_baff": "#FF7F0E",
-    "addon_to_existing": "#7F7F7F",
 }
 
 
 def _build_source_of_business_chart(forecast_years: list[int], params: dict) -> go.Figure:
-    """Stacked bar of source-of-business mix across post-launch forecast years."""
+    """Stacked bar of Ultomiris new-start sources, descriptive attribution, addon excluded."""
     launch_year = params["launch"]["us_launch_year"]
     post_launch = [y for y in forecast_years if y >= launch_year]
     mixes = {
@@ -122,16 +143,23 @@ def _build_source_of_business_chart(forecast_years: list[int], params: dict) -> 
         )
     fig.update_layout(
         barmode="stack",
-        title="Source of New Patient Starts",
+        title="Sources of New Ultomiris Patients (Descriptive Attribution)",
         xaxis=dict(title="Year", tickmode="linear", dtick=1),
-        yaxis_title="Share of starts",
-        yaxis_tickformat=".0%",
+        yaxis=dict(title="Share of new starts (excl. addon)", tickformat=".0%", range=[0, 1]),
         template="plotly_white",
         height=440,
         margin=dict(b=110),
         legend=dict(orientation="h", yanchor="bottom", y=-0.4),
     )
     return fig
+
+
+def _combination_use_rate(forecast_years: list[int], params: dict) -> tuple[float, float]:
+    """Min/max addon_to_existing share across the post-launch forecast horizon."""
+    launch_year = params["launch"]["us_launch_year"]
+    post_launch = [y for y in forecast_years if y >= launch_year]
+    addons = [source_of_business_by_year(y - launch_year)["addon_to_existing"] for y in post_launch]
+    return min(addons), max(addons)
 
 
 # ──────────────────────────── slider defaults + reset callback ─────────
@@ -341,6 +369,12 @@ with col_sob:
         _build_source_of_business_chart(forecast_years, params),
         width="stretch",
     )
+    _combo_lo, _combo_hi = _combination_use_rate(forecast_years, params)
+    st.caption(
+        f"**Combination Use Rate:** ~{_combo_lo * 100:.0f}–{_combo_hi * 100:.0f}% of Ultomiris patients "
+        f"are addon-to-existing (excluded from the chart to avoid double-counting against the "
+        f"share-of-treated view). See `docs/methodology.md`."
+    )
 with col_ana:
     st.plotly_chart(
         build_analog_overlay(load_tarpeyo(), TARPEYO_MARKET_POTENTIAL_2022, params),
@@ -350,10 +384,9 @@ with col_ana:
 
 # ──────────────────────────── competitive share ────────────────────────
 
+drug_stocks = cached_per_drug_stocks(phash, params, TARPEYO_MARKET_POTENTIAL_2022)
 st.plotly_chart(
-    build_share_chart(
-        forecast_years, params, COMPETITOR_LAUNCH_YEARS, DRUG_ATTRIBUTES
-    ),
+    build_share_chart(forecast_years, drug_stocks, launch_years=COMPETITOR_LAUNCH_YEARS),
     width="stretch",
 )
 
