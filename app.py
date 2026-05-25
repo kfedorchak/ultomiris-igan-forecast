@@ -257,7 +257,7 @@ k2.metric("Peak year", str(peak_year), help=scenario_help)
 k3.metric("Years to peak", str(peak_year - launch_year), help=scenario_help)
 k4.metric("Peak treated", fmt_patients(peak_treated), help=scenario_help)
 k5.metric("Peak revenue", fmt_currency(peak_rev), help=scenario_help)
-k6.metric("Cumulative revenue", fmt_currency(cumulative_rev), help=scenario_help)
+k6.metric(f"Cumulative revenue (through {max(forecast_years)})", fmt_currency(cumulative_rev), help=scenario_help)
 
 
 # ──────────────────────────── funnel ───────────────────────────────────
