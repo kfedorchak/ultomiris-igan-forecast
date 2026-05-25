@@ -43,9 +43,9 @@ def test_fit_converges_on_synthetic_data():
 
 def test_fit_falls_back_at_bounds():
     """Bound-edge convergence triggers fallback to default (p, q)."""
-    # Synthesize data from q=1.5 (above the [0.05, 1.0] upper bound); fit clamps to edge.
+    # Synthesize data from q=2.5 (above the [0.05, 2.0] q upper bound); fit clamps to edge.
     t = np.arange(14) / 4
-    cum = bass_cumulative_adoption(t, 0.04, 1.5, 1_000)
+    cum = bass_cumulative_adoption(t, 0.04, 2.5, 1_000)
     adds = np.diff(np.concatenate(([0.0], cum)))
     df = pd.DataFrame({"quarter_index": np.arange(14), "estimated_patients": adds})
     p_fit, q_fit = fit_bass_to_tarpeyo(df, 1_000)

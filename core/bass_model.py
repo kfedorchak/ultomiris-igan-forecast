@@ -40,11 +40,16 @@ def fit_bass_to_tarpeyo(
             t_data,
             cumulative_patients,
             p0=[0.01, 0.4],
-            bounds=([0.0001, 0.05], [0.05, 1.0]),
+            # Bounds widened to accommodate observed Tarpeyo trajectory
+            # (Q1 2022 - Q2 2024 actuals): cumulative growth reaches ~52% of
+            # M=27K in 2.5 years, implying p+q ~ 1.4 with high q/p ratio.
+            # Specialty IgAN drugs with strong clinical evidence and limited
+            # alternatives in the launch era can exhibit q > 1.0 imitation.
+            bounds=([0.0001, 0.10], [0.05, 2.0]),
             maxfev=5000,
         )
         p_fit, q_fit = popt
-        if p_fit <= 0.0005 or p_fit >= 0.045 or q_fit <= 0.08 or q_fit >= 0.95:
+        if p_fit <= 0.0005 or p_fit >= 0.095 or q_fit <= 0.08 or q_fit >= 1.95:
             logger.warning(
                 "Bass fit hit bounds (p=%.4f, q=%.3f); using fallback defaults (p=%.4f, q=%.3f)",
                 p_fit, q_fit, fallback_p, fallback_q,

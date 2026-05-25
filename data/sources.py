@@ -133,9 +133,20 @@ SOURCES = {
         "implicitly in eGFR scenario share multipliers."
     ),
     "tarpeyo_trajectory": (
-        "PLACEHOLDER: 14-quarter S-curve approximation for Bass calibration. "
-        "Kyle replaces with actuals from Calliditas 10-Qs (Q1 2022 - Q3 2024) and "
-        "Asahi Kasei pharma segment reports (Q4 2024+, post-acquisition Sep 2024)."
+        "10 quarters of Calliditas-disclosed Tarpeyo US net revenue (Q1 2022 - Q2 2024), "
+        "covering launch through the last full standalone Calliditas interim report. "
+        "Sources: Calliditas Therapeutics interim reports / press releases via prnewswire "
+        "and SEC 6-K exhibits. Notable inputs: Q1 2022 $1.9M (launch quarter), Q4 2022 "
+        "$16.1M, Q4 2023 $32.8M (SEK 347.3M @ ~10.6), Q1 2024 $26.6M (carried a ~$4.7M "
+        "Change Healthcare cyberattack GTN hit; underlying demand ~$31M), Q2 2024 $46.3M "
+        "(record quarter, +90% YoY). estimated_patients = revenue_musd × 1e6 / 15000 "
+        "(midpoint of Tarpeyo annual WAC, $14.5K at launch raised to ~$16K by 2024). "
+        "Q3 2024 onward intentionally omitted: Calliditas was acquired by Asahi Kasei "
+        "(closed Sep 4, 2024; delisted Oct 10, 2024) and no standalone Q3 2024 interim "
+        "was filed; Asahi Kasei segment disclosures since then mix Tarpeyo into the "
+        "pharma segment and the few quarterly USD breakouts available don't reconcile "
+        "cleanly with the Calliditas trajectory. Adding fabricated post-acquisition "
+        "quarters would corrupt the Bass fit."
     ),
 }
 
