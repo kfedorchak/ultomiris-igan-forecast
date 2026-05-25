@@ -32,6 +32,21 @@ st.set_page_config(
     layout="wide",
 )
 
+# Override Streamlit's default green inline-code styling with Alexion blue so
+# methodology and other backticked references brand-align with the rest of
+# the app.
+st.markdown(
+    """
+    <style>
+    [data-testid="stMarkdownContainer"] code {
+        color: #273386 !important;
+        background-color: rgba(39, 51, 134, 0.08) !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 # ──────────────────────────── cached helpers ────────────────────────────
 
@@ -134,12 +149,16 @@ def scenario_treated(yearly, scenario: str, scenario_probs: dict) -> float:
 
 # ──────────────────────────── source-of-business chart (inline) ────────
 
+from viz.formatting import ALEXION_BLUE as _ALEXION_BLUE
+
+# Treatment-naive (most strategically important — net-new class entrants)
+# gets brand blue; switch buckets are sequential greys from light to dark.
 _SOB_COLORS = {
-    "treatment_naive": "#1F77B4",
-    "switch_from_corticosteroid": "#8C564B",
-    "switch_from_endothelin": "#E377C2",
-    "switch_from_oral_complement": "#9467BD",
-    "switch_from_april_baff": "#FF7F0E",
+    "treatment_naive":            _ALEXION_BLUE,
+    "switch_from_corticosteroid": "#BFBFBF",
+    "switch_from_endothelin":     "#9E9E9E",
+    "switch_from_oral_complement": "#7D7D7D",
+    "switch_from_april_baff":     "#5C5C5C",
 }
 
 
@@ -169,7 +188,13 @@ def _build_source_of_business_chart(forecast_years: list[int], params: dict) -> 
         template="plotly_white",
         height=440,
         margin=dict(b=110),
-        legend=dict(orientation="h", yanchor="bottom", y=-0.4),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.4,
+            itemclick="toggleothers",     # click a bucket to isolate it
+            itemdoubleclick="toggle",     # double-click to restore all
+        ),
     )
     return fig
 
@@ -208,12 +233,12 @@ st.caption("Prototype for Alexion / AstraZeneca · Director, Commercial Insights
 # ──────────────────────────── sidebar ───────────────────────────────────
 
 with st.sidebar:
-    st.header("📊 Scenario")
+    st.header("Scenario")
     scenario_options = {
-        "expected_value": "⭐ Risk-adjusted (default)",
-        "strongly_positive": "🟢 Strongly positive eGFR (40%)",
-        "modestly_positive": "🟡 Modestly positive eGFR (40%)",
-        "weak_neutral": "🟠 Weak / neutral eGFR (20%)",
+        "expected_value": "Risk-adjusted (default)",
+        "strongly_positive": "Strongly positive eGFR (40%)",
+        "modestly_positive": "Modestly positive eGFR (40%)",
+        "weak_neutral": "Weak / neutral eGFR (20%)",
     }
     selected_scenario = st.radio(
         "Display scenario",
@@ -223,7 +248,7 @@ with st.sidebar:
     )
 
     st.divider()
-    st.header("🔧 Key drivers")
+    st.header("Key drivers")
 
     high_risk_pct = st.slider(
         "% high-risk patients",
@@ -265,7 +290,7 @@ with st.sidebar:
     st.button("↺ Reset drivers to defaults", on_click=reset_to_defaults)
 
     st.divider()
-    with st.expander("📚 Methodology"):
+    with st.expander("Methodology"):
         st.markdown(
             """
 **Bass diffusion** is calibrated to Tarpeyo's 2022-2025 trajectory; Ultomiris
@@ -273,8 +298,9 @@ adoption uses the fitted `(p, q)` with `p × IV/REMS friction` applied to model
 slower class-wide ramp.
 
 **Conjoint share** is a softmax over 7 weighted attributes across 8 active
-competitors. eGFR readout scenario multipliers scale Ultomiris share from
-**2029** (readout year) onward.
+competitors. eGFR readout scenarios phase in: partial impact from **2027**
+(signal year — first-cohort wk 106, prescriber anticipation builds) and full
+impact from **2028** (LPLV-based topline analysis) onward.
 
 **Stock-and-flow** with cohort persistence: each year's new-starts cohort
 ages by `Y1` then `Y2+` retention every year thereafter. Revenue =
@@ -405,11 +431,17 @@ with col_weights:
 
 render_conjoint_table(2032, params, DRUG_ATTRIBUTES, COMPETITOR_LAUNCH_YEARS)
 st.caption(
-    "**How the conjoint drives Share of Treated Patients:** each drug's attribute scores "
-    "(table above, 1-10, higher = better) × the attribute importance weights (bar chart) → "
-    "utility → softmax → share of new starts → accumulating stock → share of treated patients. "
-    "Scores evolve year-over-year via asymptotic maturation on mechanism familiarity, safety, "
-    "and payer access; inactive drugs are hidden."
+    "**How the conjoint drives Share of Treated Patients:** conjoint scores reflect prescriber "
+    "preferences across drug attributes — they govern *share allocation* (which drug a new patient "
+    "receives) via utility-weighted softmax. Each drug's attribute scores (table above, 1-10, "
+    "higher = better) × the attribute importance weights (bar chart) → utility → softmax → "
+    "share of new starts → accumulating stock → share of treated patients. Scores evolve "
+    "year-over-year via asymptotic maturation on mechanism familiarity, safety, and payer access; "
+    "inactive drugs are hidden.\n\n"
+    "Conjoint and the sidebar drivers are intentionally independent dimensions of the model. "
+    "The sidebar sliders govern *volume* (adoption rate and pool dynamics — how many new patients "
+    "are allocated); the conjoint governs *share* (which drug each one receives). The table above "
+    "responds only to the year selector, not to the sidebar sliders."
 )
 
 st.caption(

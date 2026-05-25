@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from core.revenue import run_forecast
+from viz.formatting import ALEXION_BLUE, GREY_MEDIUM
 
 
 @dataclass(frozen=True)
@@ -94,7 +95,7 @@ def build_tornado_chart(
             x=[i[1] for i in impacts],
             orientation="h",
             name="Low driver value",
-            marker_color="#D9534F",
+            marker_color=GREY_MEDIUM,
         )
     )
     fig.add_trace(
@@ -103,7 +104,7 @@ def build_tornado_chart(
             x=[i[2] for i in impacts],
             orientation="h",
             name="High driver value",
-            marker_color="#5CB85C",
+            marker_color=ALEXION_BLUE,
         )
     )
     fig.update_layout(

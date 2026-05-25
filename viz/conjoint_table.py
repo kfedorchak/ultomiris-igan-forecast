@@ -3,6 +3,7 @@
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+from matplotlib.colors import LinearSegmentedColormap
 
 from core.conjoint import (
     compute_drug_utilities,
@@ -11,6 +12,15 @@ from core.conjoint import (
     utilities_to_shares,
 )
 from viz.formatting import ULTOMIRIS_COLOR
+
+
+# Sequential grey -> Alexion-blue colormap for the drug × attribute heatmap.
+# Capped at a mid-blue tone so a single dark text color stays readable
+# across the full range (no per-cell black/white text auto-switching).
+_BLUE_GREY_CMAP = LinearSegmentedColormap.from_list(
+    "alexion_blue_grey",
+    ["#F5F5F5", "#9FAFD0", "#5066A0"],
+)
 
 
 _ATTR_DISPLAY: dict[str, str] = {
@@ -115,9 +125,14 @@ def render_conjoint_table(
     fmt_map["Share"] = "{:.1%}"
     styled = (
         display_df.style.background_gradient(
-            cmap="RdYlGn", subset=attr_display_cols, vmin=1, vmax=10
+            cmap=_BLUE_GREY_CMAP,
+            subset=attr_display_cols,
+            vmin=1,
+            vmax=10,
+            text_color_threshold=0,        # disable per-cell black/white text auto-switch
         )
         .format(fmt_map)
+        .set_properties(color="#1F1F1F")   # single consistent text color across the whole table
     )
     # Height tuned to fit N drug rows + header (35px/row, 38px header) with
     # no trailing blank row. Streamlit's dataframe widget reserves trailing

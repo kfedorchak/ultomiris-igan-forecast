@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from core.bass_model import bass_cumulative_adoption, fit_bass_to_tarpeyo
-from viz.formatting import ULTOMIRIS_COLOR
+from viz.formatting import GREY_DARK, GREY_MEDIUM, ULTOMIRIS_COLOR
 
 
 def build_analog_overlay(
@@ -36,7 +36,7 @@ def build_analog_overlay(
             y=cum_obs,
             mode="markers",
             name="Tarpeyo (observed)",
-            marker=dict(color="#8C564B", size=8),
+            marker=dict(color=GREY_DARK, size=8),
         )
     )
     fig.add_trace(
@@ -45,7 +45,7 @@ def build_analog_overlay(
             y=cum_tarpeyo,
             mode="lines",
             name=f"Tarpeyo Bass fit (p={p_fit:.3f}, q={q_fit:.3f})",
-            line=dict(color="#8C564B", width=2),
+            line=dict(color=GREY_MEDIUM, width=2),
         )
     )
     fig.add_trace(

@@ -1,23 +1,48 @@
-"""Currency/percent formatting helpers and the visualization color palette."""
+"""Currency/percent formatting helpers and the visualization color palette.
 
+Color philosophy (revamped to Alexion brand-aligned palette):
+- Alexion Blue is reserved for Ultomiris and for treatment-naive (the "new
+  patient" bucket on the SoB chart). It's the only blue that appears anywhere.
+- Alexion Red carries "downside" semantics: tornado low side, weak/neutral
+  eGFR scenario.
+- Everything else is greyscale, with sequential shades when categories need
+  to be distinguishable in a stacked plot.
+- Diverging palettes (tornado red/green, conjoint heatmap RdYlGn) are kept
+  intact because the directional semantics are meaningful.
+"""
 
-ULTOMIRIS_COLOR = "#0066B3"  # Alexion blue, reserved for Ultomiris across all charts
+# ──────────────────────────── brand ────────────────────────────
+ALEXION_BLUE = "#273386"
+ALEXION_RED = "#C50F23"
 
+ULTOMIRIS_COLOR = ALEXION_BLUE  # Ultomiris uses Alexion blue everywhere
+
+# ──────────────────────────── neutrals ─────────────────────────
+GREY_DARK = "#404040"
+GREY_MEDIUM = "#808080"
+GREY_LIGHT = "#BDBDBD"
+GREY_LIGHTEST = "#E0E0E0"
+
+# ──────────────────────────── scenario palette ─────────────────
+# Strong = forest green, Modest = neutral grey, Weak = Alexion red.
 SCENARIO_COLORS: dict[str, str] = {
-    "strongly_positive": "#2CA02C",   # green
-    "modestly_positive": "#7F7F7F",   # grey
-    "weak_neutral": "#D62728",        # red
+    "strongly_positive": "#2E7D32",
+    "modestly_positive": GREY_MEDIUM,
+    "weak_neutral": ALEXION_RED,
 }
 
+# ──────────────────────────── competitive palette ──────────────
+# Sequential greys from oldest-launched (lightest) to newest competitor
+# (darkest), with Ultomiris in Alexion blue. Ordering matches launch year.
 COMPETITOR_PALETTE: dict[str, str] = {
-    "tarpeyo": "#8C564B",
-    "filspari": "#E377C2",
-    "fabhalta": "#9467BD",
-    "vanrafia": "#17BECF",
-    "voyxact": "#BCBD22",
-    "atacicept": "#FF7F0E",
-    "povetacicept": "#A0A0A0",
-    "ultomiris": ULTOMIRIS_COLOR,
+    "tarpeyo":      "#BFBFBF",
+    "filspari":     "#A6A6A6",
+    "fabhalta":     "#8C8C8C",
+    "vanrafia":     "#737373",
+    "voyxact":      "#595959",
+    "atacicept":    "#404040",
+    "povetacicept": "#2A2A2A",
+    "ultomiris":    ALEXION_BLUE,
 }
 
 

@@ -53,6 +53,12 @@ def build_share_chart(
         template="plotly_white",
         height=440,
         margin=dict(t=60, b=110),
-        legend=dict(orientation="h", yanchor="bottom", y=-0.4),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.4,
+            itemclick="toggleothers",     # click a drug to isolate it
+            itemdoubleclick="toggle",     # double-click to restore all
+        ),
     )
     return fig

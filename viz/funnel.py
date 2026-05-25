@@ -27,7 +27,10 @@ def build_funnel_figure(
 
     title = f"Patient Funnel — all values at {year}"
     if scenario_label:
-        title += f"<br><span style='font-size:13px;color:#888'>{scenario_label}</span>"
+        title += (
+            f"<br><span style='font-size:13px;font-weight:normal;color:#888'>"
+            f"{scenario_label}</span>"
+        )
 
     fig = go.Figure(
         go.Funnel(

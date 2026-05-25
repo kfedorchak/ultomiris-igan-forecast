@@ -4,8 +4,9 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Streamlit
-.streamlit/
+# Streamlit: ignore everything in .streamlit/ (credentials, secrets) except config.toml
+.streamlit/*
+!.streamlit/config.toml
 
 # Testing
 .pytest_cache/
