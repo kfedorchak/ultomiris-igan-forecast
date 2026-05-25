@@ -87,11 +87,17 @@ def build_tornado_chart(
     )
     fig.update_layout(
         title=f"Sensitivity (cumulative EV revenue) — base ${base_ev / 1e9:.2f}B",
-        xaxis_title="Δ from base cumulative EV (USD)",
-        xaxis=dict(tickformat="$.2s", zeroline=True, zerolinewidth=2, zerolinecolor="black"),
+        xaxis=dict(
+            title="Δ from base cumulative EV (USD)",
+            tickformat="$.2s",
+            zeroline=True,
+            zerolinewidth=2,
+            zerolinecolor="black",
+        ),
         template="plotly_white",
-        height=400,
+        height=440,
+        margin=dict(b=110),
         barmode="overlay",
-        legend=dict(orientation="h", yanchor="bottom", y=-0.25),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.4),
     )
     return fig
