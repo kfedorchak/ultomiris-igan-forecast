@@ -231,7 +231,7 @@ with st.sidebar:
         key="high_risk_pct",
     )
     market_potential_fraction = st.slider(
-        "Peak treatment penetration",
+        "Class adoption ceiling",
         min_value=0.30, max_value=0.85,
         step=0.01, format="%.2f",
         key="market_potential_fraction",

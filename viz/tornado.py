@@ -22,7 +22,7 @@ class TornadoDriver:
 
 KEY_DRIVERS: list[TornadoDriver] = [
     TornadoDriver("epi", "high_risk_pct", "% high-risk patients", 0.20, 0.60),
-    TornadoDriver("bass", "market_potential_fraction", "Peak treatment penetration", 0.30, 0.85),
+    TornadoDriver("bass", "market_potential_fraction", "Class adoption ceiling", 0.30, 0.85),
     TornadoDriver("bass", "p_ultomiris_adjustment", "IV/REMS friction (1=none)", 0.30, 1.00),
     TornadoDriver("persistence", "year_2plus_persistence", "Annual persistence (y2+)", 0.60, 0.95),
     TornadoDriver("pricing", "net_price_per_patient_year", "Net price ($/yr)", 250_000, 700_000),

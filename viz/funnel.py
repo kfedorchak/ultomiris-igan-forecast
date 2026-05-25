@@ -18,7 +18,7 @@ def build_funnel_figure(
     stages = [
         "Diagnosed IgAN",
         "High-risk",
-        "Addressable max (60% × high-risk)",
+        "Class adoption ceiling",
         "On targeted IgAN therapy",
         "Ultomiris on therapy",
     ]
