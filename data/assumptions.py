@@ -53,14 +53,19 @@ DEFAULTS = {
         "market_potential_fraction": 0.60,
     },
     "conjoint": {
+        # Weights rebalanced post-audit (Tier 3): route 0.18 -> 0.15 (typical
+        # clinical conjoint puts route at 10-15%; 18% overweighted Ultomiris's
+        # IV penalty), safety 0.12 -> 0.13 (multiple drugs in class carry
+        # REMS), payer 0.15 -> 0.17 (high-cost biologics like Ultomiris face
+        # real payer hurdles regardless of franchise infrastructure).
         "attribute_weights": {
             "proteinuria_efficacy": 0.20,
             "egfr_preservation": 0.18,
-            "route_of_admin": 0.18,
+            "route_of_admin": 0.15,
             "dosing_frequency": 0.10,
-            "safety_burden": 0.12,
+            "safety_burden": 0.13,
             "mechanism_familiarity": 0.07,
-            "payer_access": 0.15,
+            "payer_access": 0.17,
         },
         "logit_lambda": 0.5,                           # softmax steepness
     },
