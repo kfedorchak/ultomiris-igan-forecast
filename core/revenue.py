@@ -95,12 +95,15 @@ def compute_new_starts_per_year(
     q_fit: float,
     competitor_launch_years: dict[str, int] | None = None,
     drug_attributes: dict[str, dict[str, float]] | None = None,
-) -> dict[int, float]:
-    """Annual Ultomiris new starts under one eGFR scenario.
+) -> dict[str, dict[int, float]]:
+    """Annual per-drug new starts under one eGFR scenario.
 
     Class-wide new starts (from compute_class_new_starts_per_year) are allocated
-    to Ultomiris via softmax over active competitors. Scenario multiplier on
-    Ultomiris share gates on year >= egfr_readout_year. Pre-launch years return 0.
+    to drugs via time-varying conjoint shares. From egfr_readout_year onward,
+    Ultomiris's share is multiplied by the scenario's share_multiplier and ALL
+    active drug shares are renormalized to sum to 1.0 (zero-sum: competitor
+    shares decrease when Ultomiris boosted, increase when suppressed).
+    Returns {drug: {year: new starts}}.
     """
     if competitor_launch_years is None:
         competitor_launch_years = COMPETITOR_LAUNCH_YEARS
@@ -110,36 +113,41 @@ def compute_new_starts_per_year(
     launch_year = params["launch"]["us_launch_year"]
     egfr_readout_year = params["launch"]["egfr_readout_year"]
     scenario = params["egfr_readout_scenarios"][scenario_name]
+    multiplier = scenario["share_multiplier"]
+    weights = params["conjoint"]["attribute_weights"]
+    logit = params["conjoint"]["logit_lambda"]
 
     class_new = compute_class_new_starts_per_year(forecast_years, params, p_fit, q_fit)
 
-    new_starts: dict[int, float] = {}
+    drug_new_starts: dict[str, dict[int, float]] = {d: {} for d in competitor_launch_years}
     for year in forecast_years:
         if year < launch_year:
-            new_starts[year] = 0.0
+            for d in competitor_launch_years:
+                drug_new_starts[d][year] = 0.0
             continue
 
-        year_attrs = get_drug_attributes_for_year(
-            year, drug_attributes, competitor_launch_years
-        )
-        utilities = compute_drug_utilities(
-            year_attrs, params["conjoint"]["attribute_weights"]
-        )
+        year_attrs = get_drug_attributes_for_year(year, drug_attributes, competitor_launch_years)
+        utilities = compute_drug_utilities(year_attrs, weights)
         active = get_active_drugs_for_year(year, competitor_launch_years)
-        shares = utilities_to_shares(
-            utilities, params["conjoint"]["logit_lambda"], active
-        )
-        ultomiris_share = shares["ultomiris"]
-        if year >= egfr_readout_year:
-            ultomiris_share = ultomiris_share * scenario["share_multiplier"]
+        shares = utilities_to_shares(utilities, logit, active)
 
-        new_starts[year] = class_new[year] * ultomiris_share
+        if year >= egfr_readout_year and "ultomiris" in active and multiplier != 1.0:
+            ultomiris_raw = shares["ultomiris"]
+            renorm = 1.0 + ultomiris_raw * (multiplier - 1.0)
+            shares = {
+                d: (s * multiplier if d == "ultomiris" else s) / renorm
+                for d, s in shares.items()
+            }
 
-    return new_starts
+        for drug in competitor_launch_years:
+            drug_new_starts[drug][year] = class_new.get(year, 0.0) * shares.get(drug, 0.0)
+
+    return drug_new_starts
 
 
 def compute_per_drug_treated_stocks(
     forecast_years: list[int],
+    scenario_name: str,
     params: dict,
     p_fit: float,
     q_fit: float,
@@ -147,13 +155,12 @@ def compute_per_drug_treated_stocks(
     drug_attributes: dict[str, dict[str, float]] | None = None,
     drug_veteran_cohorts: dict[str, float] | None = None,
 ) -> dict[str, dict[int, float]]:
-    """Per-drug active treated stock per year.
+    """Per-drug active treated stock per year under one eGFR scenario.
 
-    Single class-wide Bass curve produces total new starts. Each year's new
-    starts are allocated to active drugs via time-varying conjoint shares
-    (asymptotic attribute maturation applied per drug-year). Per-drug cohorts
-    age through the standard persistence schedule; veteran cohorts from
-    DRUG_VETERAN_COHORTS_2027 seed each drug at Ultomiris launch year.
+    Builds on compute_new_starts_per_year, applying persistence cohorts and
+    seeding veterans from DRUG_VETERAN_COHORTS_2027 at forecast_start_year so
+    the pre-launch (e.g. 2026) column reflects the actual end-of-2026
+    / start-of-Ultomiris-launch snapshot.
     Returns {drug: {year: active stock}}.
     """
     if competitor_launch_years is None:
@@ -163,31 +170,22 @@ def compute_per_drug_treated_stocks(
     if drug_veteran_cohorts is None:
         drug_veteran_cohorts = DRUG_VETERAN_COHORTS_2027
 
-    class_new = compute_class_new_starts_per_year(forecast_years, params, p_fit, q_fit)
-    weights = params["conjoint"]["attribute_weights"]
-    logit = params["conjoint"]["logit_lambda"]
+    drug_new_starts = compute_new_starts_per_year(
+        forecast_years,
+        scenario_name,
+        params,
+        p_fit,
+        q_fit,
+        competitor_launch_years,
+        drug_attributes,
+    )
     forecast_start = params["launch"]["forecast_start_year"]
     persistence_y1 = params["persistence"]["year_1_persistence"]
     persistence_y2plus = params["persistence"]["year_2plus_persistence"]
 
-    drug_new_starts: dict[str, dict[int, float]] = {
-        d: {} for d in competitor_launch_years
-    }
-    for year in forecast_years:
-        year_attrs = get_drug_attributes_for_year(
-            year, drug_attributes, competitor_launch_years
-        )
-        utilities = compute_drug_utilities(year_attrs, weights)
-        active = get_active_drugs_for_year(year, competitor_launch_years)
-        shares = utilities_to_shares(utilities, logit, active)
-        for drug in competitor_launch_years:
-            drug_new_starts[drug][year] = class_new.get(year, 0.0) * shares.get(drug, 0.0)
-
     drug_stocks: dict[str, dict[int, float]] = {}
     for drug, starts in drug_new_starts.items():
         veteran = drug_veteran_cohorts.get(drug, 0.0)
-        # Seed at forecast_start so the 2026 column reflects the end-of-2026
-        # (= start-of-Ultomiris-launch-year) snapshot instead of being empty.
         veteran_arg = (forecast_start, veteran) if veteran > 0 else None
         drug_stocks[drug] = compute_treated_stock(
             forecast_years, starts, persistence_y1, persistence_y2plus, veteran_arg
@@ -303,7 +301,7 @@ def run_forecast(
 
     treated_stock_by_scenario: dict[str, dict[int, float]] = {}
     for scenario_name in params["egfr_readout_scenarios"]:
-        new_starts = compute_new_starts_per_year(
+        drug_stocks = compute_per_drug_treated_stocks(
             forecast_years,
             scenario_name,
             params,
@@ -312,9 +310,7 @@ def run_forecast(
             competitor_launch_years,
             drug_attributes,
         )
-        treated_stock_by_scenario[scenario_name] = compute_treated_stock(
-            forecast_years, new_starts, persistence_y1, persistence_y2plus
-        )
+        treated_stock_by_scenario[scenario_name] = drug_stocks["ultomiris"]
 
     return {
         year: compute_yearly_revenue(year, treated_stock_by_scenario, params)

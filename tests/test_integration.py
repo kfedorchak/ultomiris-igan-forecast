@@ -105,7 +105,7 @@ def test_tarpeyo_share_of_treated_exceeds_share_of_new_starts_at_2032(tarpeyo_df
     fs = DEFAULTS["launch"]["forecast_start_year"]
     forecast_years = list(range(fs, fs + DEFAULTS["launch"]["forecast_horizon_years"]))
 
-    drug_stocks = compute_per_drug_treated_stocks(forecast_years, DEFAULTS, p_fit, q_fit)
+    drug_stocks = compute_per_drug_treated_stocks(forecast_years, "modestly_positive", DEFAULTS, p_fit, q_fit)
     total_2032 = sum(drug_stocks[d][2032] for d in drug_stocks)
     tarpeyo_share_of_treated = drug_stocks["tarpeyo"][2032] / total_2032
 
@@ -119,3 +119,66 @@ def test_tarpeyo_share_of_treated_exceeds_share_of_new_starts_at_2032(tarpeyo_df
         f"first-mover advantage missing: stock share {tarpeyo_share_of_treated:.3f} "
         f"vs new-starts share {tarpeyo_share_of_new_starts:.3f}"
     )
+
+
+def test_drug_new_starts_sum_to_class_new_every_year_per_scenario(tarpeyo_df):
+    """Renormalization invariant: per-drug new starts sum to class_new in every year × scenario."""
+    from core.revenue import compute_class_new_starts_per_year, compute_new_starts_per_year
+
+    p_fit, q_fit = fit_bass_to_tarpeyo(tarpeyo_df, TARPEYO_MARKET_POTENTIAL_2022)
+    fs = DEFAULTS["launch"]["forecast_start_year"]
+    forecast_years = list(range(fs, fs + DEFAULTS["launch"]["forecast_horizon_years"]))
+    class_new = compute_class_new_starts_per_year(forecast_years, DEFAULTS, p_fit, q_fit)
+    for scenario in DEFAULTS["egfr_readout_scenarios"]:
+        drug_starts = compute_new_starts_per_year(forecast_years, scenario, DEFAULTS, p_fit, q_fit)
+        for year in forecast_years:
+            drug_sum = sum(drug_starts[d][year] for d in drug_starts)
+            if class_new[year] > 1e-6:
+                assert abs(drug_sum - class_new[year]) < 1e-6, (
+                    f"{scenario}/{year}: drug-sum {drug_sum:.4f} != class_new {class_new[year]:.4f}"
+                )
+
+
+def test_ultomiris_share_strong_exceeds_weak_post_readout(tarpeyo_df):
+    """Post-readout: Ultomiris share-of-treated in strongly_positive > weak_neutral."""
+    from core.revenue import compute_per_drug_treated_stocks
+
+    p_fit, q_fit = fit_bass_to_tarpeyo(tarpeyo_df, TARPEYO_MARKET_POTENTIAL_2022)
+    fs = DEFAULTS["launch"]["forecast_start_year"]
+    forecast_years = list(range(fs, fs + DEFAULTS["launch"]["forecast_horizon_years"]))
+    readout = DEFAULTS["launch"]["egfr_readout_year"]
+
+    strong = compute_per_drug_treated_stocks(forecast_years, "strongly_positive", DEFAULTS, p_fit, q_fit)
+    weak = compute_per_drug_treated_stocks(forecast_years, "weak_neutral", DEFAULTS, p_fit, q_fit)
+
+    for year in [y for y in forecast_years if y >= readout]:
+        s_total = sum(strong[d][year] for d in strong)
+        w_total = sum(weak[d][year] for d in weak)
+        s_ult = strong["ultomiris"][year] / s_total
+        w_ult = weak["ultomiris"][year] / w_total
+        assert s_ult > w_ult, f"{year}: strong {s_ult:.4f} not > weak {w_ult:.4f}"
+
+
+def test_competitor_share_strong_below_weak_post_readout(tarpeyo_df):
+    """Post-readout: every competitor's share-of-treated in strongly_positive <= weak_neutral (zero-sum mirror)."""
+    from core.revenue import compute_per_drug_treated_stocks
+
+    p_fit, q_fit = fit_bass_to_tarpeyo(tarpeyo_df, TARPEYO_MARKET_POTENTIAL_2022)
+    fs = DEFAULTS["launch"]["forecast_start_year"]
+    forecast_years = list(range(fs, fs + DEFAULTS["launch"]["forecast_horizon_years"]))
+    readout = DEFAULTS["launch"]["egfr_readout_year"]
+
+    strong = compute_per_drug_treated_stocks(forecast_years, "strongly_positive", DEFAULTS, p_fit, q_fit)
+    weak = compute_per_drug_treated_stocks(forecast_years, "weak_neutral", DEFAULTS, p_fit, q_fit)
+
+    for year in [y for y in forecast_years if y >= readout]:
+        s_total = sum(strong[d][year] for d in strong)
+        w_total = sum(weak[d][year] for d in weak)
+        for drug in strong:
+            if drug == "ultomiris":
+                continue
+            s_share = strong[drug][year] / s_total if s_total > 0 else 0.0
+            w_share = weak[drug][year] / w_total if w_total > 0 else 0.0
+            assert s_share <= w_share, (
+                f"{drug}/{year}: strong {s_share:.4f} > weak {w_share:.4f} (mirror violated)"
+            )

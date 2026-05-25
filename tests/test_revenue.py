@@ -44,15 +44,16 @@ def test_pre_launch_returns_zero_revenue(forecast):
 
 
 def test_new_starts_positive_in_every_post_launch_year(bass_fit, forecast_years):
-    """Risk #2 regression: class-wide Bass with stable total_M never yields negative new starts."""
+    """Risk #2 regression: class-wide Bass with stable total_M never yields negative Ultomiris new starts."""
     p_fit, q_fit = bass_fit
-    new_starts = compute_new_starts_per_year(
+    drug_new_starts = compute_new_starts_per_year(
         forecast_years, "modestly_positive", DEFAULTS, p_fit, q_fit
     )
     launch_year = DEFAULTS["launch"]["us_launch_year"]
     for year in forecast_years:
         if year >= launch_year:
-            assert new_starts[year] > 0, f"non-positive new_starts in {year}: {new_starts[year]}"
+            ult = drug_new_starts["ultomiris"][year]
+            assert ult > 0, f"non-positive ultomiris new_starts in {year}: {ult}"
 
 
 def test_first_year_cohort_not_aged():

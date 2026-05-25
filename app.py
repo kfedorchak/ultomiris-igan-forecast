@@ -56,8 +56,12 @@ def cached_tornado(params_hash: str, _params: dict, market_potential: float, sce
 
 
 @st.cache_data
-def cached_per_drug_stocks(params_hash: str, _params: dict, market_potential: float) -> dict[str, dict[int, float]]:
-    """Per-drug active treated stocks per year (stock-based share-of-treated chart input)."""
+def cached_per_drug_stocks(params_hash: str, _params: dict, market_potential: float, scenario: str) -> dict[str, dict[int, float]]:
+    """Per-drug active treated stocks per year under `scenario`.
+
+    'expected_value' returns probability-weighted stocks across the three eGFR
+    scenarios; otherwise returns the per-drug stocks for the named scenario.
+    """
     p_fit, q_fit = fit_bass_to_tarpeyo(
         load_tarpeyo(),
         market_potential,
@@ -67,7 +71,25 @@ def cached_per_drug_stocks(params_hash: str, _params: dict, market_potential: fl
     fs = _params["launch"]["forecast_start_year"]
     horizon = _params["launch"]["forecast_horizon_years"]
     years = list(range(fs, fs + horizon))
-    return compute_per_drug_treated_stocks(years, _params, p_fit, q_fit)
+
+    if scenario == "expected_value":
+        scenarios = _params["egfr_readout_scenarios"]
+        per_scenario = {
+            s: compute_per_drug_treated_stocks(years, s, _params, p_fit, q_fit)
+            for s in scenarios
+        }
+        any_s = next(iter(scenarios))
+        drugs = list(per_scenario[any_s].keys())
+        ev: dict[str, dict[int, float]] = {d: {} for d in drugs}
+        for d in drugs:
+            for y in years:
+                ev[d][y] = sum(
+                    scenarios[s]["probability"] * per_scenario[s][d][y]
+                    for s in scenarios
+                )
+        return ev
+
+    return compute_per_drug_treated_stocks(years, scenario, _params, p_fit, q_fit)
 
 
 @st.cache_data
@@ -367,7 +389,7 @@ with col_ana:
 
 # ──────────────────────────── competitive share ────────────────────────
 
-drug_stocks = cached_per_drug_stocks(phash, params, TARPEYO_MARKET_POTENTIAL_2022)
+drug_stocks = cached_per_drug_stocks(phash, params, TARPEYO_MARKET_POTENTIAL_2022, selected_scenario)
 st.plotly_chart(
     build_share_chart(forecast_years, drug_stocks, launch_years=COMPETITOR_LAUNCH_YEARS),
     width="stretch",
