@@ -11,12 +11,24 @@ of it via slider state.
 # See sources.py for full rationale.
 TARPEYO_MARKET_POTENTIAL_2022 = 27_000
 
-# Active patients on any targeted IgAN therapy at the start of Ultomiris launch
-# year (2027). Derived from issuer disclosures (Tarpeyo + Filspari + Fabhalta +
-# Vanrafia + Voyxact early ramps). Used to seed class-wide active stock in the
-# funnel so it doesn't artificially start from zero in 2027; does not affect
-# Ultomiris-specific new starts or share. See sources.py for derivation.
-CLASS_TREATED_AT_ULTOMIRIS_LAUNCH = 20_000
+# Active patients per drug at the start of Ultomiris launch year (2027).
+# Derived from issuer disclosures: Tarpeyo ~7.5K end-2024 (Asahi Kasei) growing
+# to ~10K by end-2026 with continued KOL adoption; Filspari ~4.5K end-2024
+# (Travere) growing to ~5K; Fabhalta ~2K end-2024 (Novartis early launch)
+# growing to ~3K; Vanrafia/Voyxact 2025 launches; Atacicept 2026 launch.
+# Total sums to CLASS_TREATED_AT_ULTOMIRIS_LAUNCH = 20,000.
+DRUG_VETERAN_COHORTS_2027: dict[str, float] = {
+    "tarpeyo": 10_000,
+    "filspari": 5_000,
+    "fabhalta": 3_000,
+    "vanrafia": 1_000,
+    "voyxact": 500,
+    "atacicept": 500,
+}
+
+# Sum of per-drug veteran cohorts. Used to seed class-wide active stock in the
+# funnel so it doesn't artificially start from zero in 2027.
+CLASS_TREATED_AT_ULTOMIRIS_LAUNCH = sum(DRUG_VETERAN_COHORTS_2027.values())
 
 
 DEFAULTS = {

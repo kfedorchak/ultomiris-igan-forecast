@@ -50,6 +50,27 @@ SOURCES = {
         "additions through 2025-2026 and continuing class growth. Kyle replaces "
         "with reconciled actuals before final use."
     ),
+    "drug_veteran_cohorts_2027": (
+        "PLACEHOLDER per-drug split of the 20K class veteran cohort at end-2026: "
+        "Tarpeyo 10K (first mover, 4yr ramp), Filspari 5K (3yr), Fabhalta 3K (2yr), "
+        "Vanrafia 1K + Voyxact 0.5K (2025 launches), Atacicept 0.5K (2026 launch). "
+        "Drives first-mover stock advantage in the share-of-treated chart. Kyle "
+        "replaces with reconciled actuals."
+    ),
+    "asymptotic_attribute_maturation": (
+        "Real-world clinical & commercial perception of a drug evolves post-launch: "
+        "prescriber familiarity grows with experience, the safety profile gets "
+        "characterized through registries, and payer access matures via formulary "
+        "negotiations. We model this with asymptotic growth: "
+        "boost(t) = max_boost × (1 − exp(−t/tau)), where t is years since launch. "
+        "Parameters chosen to be intuitive rather than calibrated: "
+        "mechanism_familiarity (max_boost=2.0, tau=3yr — prescribers learn fast); "
+        "safety_burden (max_boost=1.5, tau=4yr — registry data matures over years); "
+        "payer_access (max_boost=1.0, tau=5yr — formulary cycles are slow). "
+        "Scores cap at 10. Other attributes (efficacy, route, dosing) are fixed by "
+        "molecular properties and don't mature. Sigmoid or logistic would be the "
+        "natural refinement if a learning-curve inflection becomes empirically observable."
+    ),
     "p_ultomiris_adjustment": (
         "Multiplier on Tarpeyo-fitted innovation rate to reflect IV q8w + meningococcal "
         "REMS friction vs. Tarpeyo's oral self-administered profile. Analyst consensus "

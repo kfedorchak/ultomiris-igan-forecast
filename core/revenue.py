@@ -10,9 +10,11 @@ from core.bass_model import bass_cumulative_adoption, fit_bass_to_tarpeyo
 from core.conjoint import (
     compute_drug_utilities,
     get_active_drugs_for_year,
+    get_drug_attributes_for_year,
     utilities_to_shares,
 )
 from core.patient_flow import compute_patient_pool
+from data.assumptions import DRUG_VETERAN_COHORTS_2027
 from data.competitive_landscape import COMPETITOR_LAUNCH_YEARS, DRUG_ATTRIBUTES
 
 logger = logging.getLogger(__name__)
@@ -111,16 +113,18 @@ def compute_new_starts_per_year(
 
     class_new = compute_class_new_starts_per_year(forecast_years, params, p_fit, q_fit)
 
-    utilities = compute_drug_utilities(
-        drug_attributes, params["conjoint"]["attribute_weights"]
-    )
-
     new_starts: dict[int, float] = {}
     for year in forecast_years:
         if year < launch_year:
             new_starts[year] = 0.0
             continue
 
+        year_attrs = get_drug_attributes_for_year(
+            year, drug_attributes, competitor_launch_years
+        )
+        utilities = compute_drug_utilities(
+            year_attrs, params["conjoint"]["attribute_weights"]
+        )
         active = get_active_drugs_for_year(year, competitor_launch_years)
         shares = utilities_to_shares(
             utilities, params["conjoint"]["logit_lambda"], active
@@ -132,6 +136,63 @@ def compute_new_starts_per_year(
         new_starts[year] = class_new[year] * ultomiris_share
 
     return new_starts
+
+
+def compute_per_drug_treated_stocks(
+    forecast_years: list[int],
+    params: dict,
+    p_fit: float,
+    q_fit: float,
+    competitor_launch_years: dict[str, int] | None = None,
+    drug_attributes: dict[str, dict[str, float]] | None = None,
+    drug_veteran_cohorts: dict[str, float] | None = None,
+) -> dict[str, dict[int, float]]:
+    """Per-drug active treated stock per year.
+
+    Single class-wide Bass curve produces total new starts. Each year's new
+    starts are allocated to active drugs via time-varying conjoint shares
+    (asymptotic attribute maturation applied per drug-year). Per-drug cohorts
+    age through the standard persistence schedule; veteran cohorts from
+    DRUG_VETERAN_COHORTS_2027 seed each drug at Ultomiris launch year.
+    Returns {drug: {year: active stock}}.
+    """
+    if competitor_launch_years is None:
+        competitor_launch_years = COMPETITOR_LAUNCH_YEARS
+    if drug_attributes is None:
+        drug_attributes = DRUG_ATTRIBUTES
+    if drug_veteran_cohorts is None:
+        drug_veteran_cohorts = DRUG_VETERAN_COHORTS_2027
+
+    class_new = compute_class_new_starts_per_year(forecast_years, params, p_fit, q_fit)
+    weights = params["conjoint"]["attribute_weights"]
+    logit = params["conjoint"]["logit_lambda"]
+    forecast_start = params["launch"]["forecast_start_year"]
+    persistence_y1 = params["persistence"]["year_1_persistence"]
+    persistence_y2plus = params["persistence"]["year_2plus_persistence"]
+
+    drug_new_starts: dict[str, dict[int, float]] = {
+        d: {} for d in competitor_launch_years
+    }
+    for year in forecast_years:
+        year_attrs = get_drug_attributes_for_year(
+            year, drug_attributes, competitor_launch_years
+        )
+        utilities = compute_drug_utilities(year_attrs, weights)
+        active = get_active_drugs_for_year(year, competitor_launch_years)
+        shares = utilities_to_shares(utilities, logit, active)
+        for drug in competitor_launch_years:
+            drug_new_starts[drug][year] = class_new.get(year, 0.0) * shares.get(drug, 0.0)
+
+    drug_stocks: dict[str, dict[int, float]] = {}
+    for drug, starts in drug_new_starts.items():
+        veteran = drug_veteran_cohorts.get(drug, 0.0)
+        # Seed at forecast_start so the 2026 column reflects the end-of-2026
+        # (= start-of-Ultomiris-launch-year) snapshot instead of being empty.
+        veteran_arg = (forecast_start, veteran) if veteran > 0 else None
+        drug_stocks[drug] = compute_treated_stock(
+            forecast_years, starts, persistence_y1, persistence_y2plus, veteran_arg
+        )
+    return drug_stocks
 
 
 def compute_treated_stock(

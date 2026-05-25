@@ -5,6 +5,7 @@ import pytest
 from core.conjoint import (
     compute_drug_utilities,
     get_active_drugs_for_year,
+    get_drug_attributes_for_year,
     utilities_to_shares,
 )
 from data.assumptions import DEFAULTS
@@ -61,3 +62,29 @@ def test_get_active_drugs_filters_by_launch_year():
     expected = {d for d, ly in COMPETITOR_LAUNCH_YEARS.items() if ly <= 2026}
     assert active_2026 == expected
     assert "ultomiris" not in active_2026  # ultomiris launches 2027
+
+
+def test_attribute_maturation_lifts_ultomiris_mechanism_familiarity():
+    """Ultomiris mechanism_familiarity is materially higher in 2034 (ysl=7) than 2027 (ysl=0)."""
+    attrs_2027 = get_drug_attributes_for_year(2027, DRUG_ATTRIBUTES, COMPETITOR_LAUNCH_YEARS)
+    attrs_2034 = get_drug_attributes_for_year(2034, DRUG_ATTRIBUTES, COMPETITOR_LAUNCH_YEARS)
+    mf_2027 = attrs_2027["ultomiris"]["mechanism_familiarity"]
+    mf_2034 = attrs_2034["ultomiris"]["mechanism_familiarity"]
+    assert mf_2027 == DRUG_ATTRIBUTES["ultomiris"]["mechanism_familiarity"]  # ysl=0, no boost
+    assert mf_2034 - mf_2027 >= 1.0, f"expected >=1.0 boost by 2034; got {mf_2034 - mf_2027:.2f}"
+
+
+def test_attribute_maturation_caps_at_10():
+    """Score saturation: a drug already near 10 doesn't exceed 10 with maturation."""
+    base = {"x": {"mechanism_familiarity": 9.5, "safety_burden": 9.0, "payer_access": 9.5}}
+    launches = {"x": 2020}
+    matured = get_drug_attributes_for_year(2030, base, launches)
+    for v in matured["x"].values():
+        assert v <= 10.0
+
+
+def test_non_maturing_attributes_unchanged():
+    """Efficacy / route / dosing are fixed by molecular properties — no maturation applied."""
+    attrs_2034 = get_drug_attributes_for_year(2034, DRUG_ATTRIBUTES, COMPETITOR_LAUNCH_YEARS)
+    for fixed_attr in ("proteinuria_efficacy", "egfr_preservation", "route_of_admin", "dosing_frequency"):
+        assert attrs_2034["ultomiris"][fixed_attr] == DRUG_ATTRIBUTES["ultomiris"][fixed_attr]

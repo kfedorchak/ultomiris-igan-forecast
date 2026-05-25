@@ -88,3 +88,34 @@ def test_default_tarpeyo_data_fits_without_fallback(tarpeyo_df):
     p, q = fit_bass_to_tarpeyo(tarpeyo_df, TARPEYO_MARKET_POTENTIAL_2022)
     fallback = (DEFAULTS["bass"]["innovation_p_default"], DEFAULTS["bass"]["imitation_q_default"])
     assert (p, q) != fallback
+
+
+def test_tarpeyo_share_of_treated_exceeds_share_of_new_starts_at_2032(tarpeyo_df):
+    """First-mover advantage: Tarpeyo's accumulated stock gives it more share-of-treated than share-of-new-starts."""
+    from core.conjoint import (
+        compute_drug_utilities,
+        get_active_drugs_for_year,
+        get_drug_attributes_for_year,
+        utilities_to_shares,
+    )
+    from core.revenue import compute_per_drug_treated_stocks
+    from data.competitive_landscape import COMPETITOR_LAUNCH_YEARS, DRUG_ATTRIBUTES
+
+    p_fit, q_fit = fit_bass_to_tarpeyo(tarpeyo_df, TARPEYO_MARKET_POTENTIAL_2022)
+    fs = DEFAULTS["launch"]["forecast_start_year"]
+    forecast_years = list(range(fs, fs + DEFAULTS["launch"]["forecast_horizon_years"]))
+
+    drug_stocks = compute_per_drug_treated_stocks(forecast_years, DEFAULTS, p_fit, q_fit)
+    total_2032 = sum(drug_stocks[d][2032] for d in drug_stocks)
+    tarpeyo_share_of_treated = drug_stocks["tarpeyo"][2032] / total_2032
+
+    year_attrs = get_drug_attributes_for_year(2032, DRUG_ATTRIBUTES, COMPETITOR_LAUNCH_YEARS)
+    utilities = compute_drug_utilities(year_attrs, DEFAULTS["conjoint"]["attribute_weights"])
+    active = get_active_drugs_for_year(2032, COMPETITOR_LAUNCH_YEARS)
+    shares = utilities_to_shares(utilities, DEFAULTS["conjoint"]["logit_lambda"], active)
+    tarpeyo_share_of_new_starts = shares["tarpeyo"]
+
+    assert tarpeyo_share_of_treated > tarpeyo_share_of_new_starts, (
+        f"first-mover advantage missing: stock share {tarpeyo_share_of_treated:.3f} "
+        f"vs new-starts share {tarpeyo_share_of_new_starts:.3f}"
+    )
