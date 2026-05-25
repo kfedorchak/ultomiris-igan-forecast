@@ -109,7 +109,14 @@ SOURCES = {
         "AZ I CAN Phase 3 timeline: wk 34 proteinuria readout 2026, wk 106 eGFR readout 2029, "
         "US launch 2027 contingent on accelerated approval."
     ),
-    "egfr_readout_year": "Week 106 eGFR readout from I CAN trial; AZ guidance points to 2029.",
+    "egfr_readout_timing": (
+        "Wk 106 readout is timed from trial enrollment, not drug approval. "
+        "Backsolving from the April 2026 wk 34 interim: first-cohort patients "
+        "reach wk 106 around September 2027 (egfr_signal_year, modeling early "
+        "prescriber anticipation); formal LPLV-based topline analysis around "
+        "mid-2028 (egfr_readout_year). The 0.5 partial strength in 2027 reflects "
+        "gradual prescriber response to anticipated data."
+    ),
     "egfr_scenario_multipliers": (
         "Moderated v2 (1.18 / 1.00 / 0.78) based on: Fabhalta APPLAUSE-IgAN 2yr eGFR data "
         "(Novartis, 2025); Vanrafia ALIGN trial eGFR miss with continued FDA accelerated "

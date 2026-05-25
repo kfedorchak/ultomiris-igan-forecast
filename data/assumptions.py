@@ -79,7 +79,15 @@ DEFAULTS = {
         "us_launch_year": 2027,
         "forecast_start_year": 2026,
         "forecast_horizon_years": 10,
-        "egfr_readout_year": 2029,                     # wk 106 readout; eGFR scenarios gate here
+        # eGFR scenario impact phases in over 2027-2028 reflecting gradual
+        # prescriber response — anticipation in 2027 (signal year, partial
+        # impact), full effect from 2028 onward (formal readout year). The
+        # wk 106 milestone is timed from trial enrollment (not drug
+        # approval), so first-cohort patients reach wk 106 around Sep 2027
+        # and the LPLV-based topline lands around mid-2028.
+        "egfr_signal_year": 2027,                      # First-cohort wk 106; prescriber anticipation begins
+        "egfr_readout_year": 2028,                     # LPLV-based topline analysis; full data response
+        "egfr_signal_partial_strength": 0.5,           # 50% of full scenario impact in the signal year
     },
     # eGFR readout scenario multipliers act on Ultomiris share inside
     # compute_new_starts_per_year, gated on year >= egfr_readout_year.

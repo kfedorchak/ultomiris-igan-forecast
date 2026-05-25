@@ -6,6 +6,33 @@
 > mechanics, Gate #6 calibration). The sections below are the structurally-load-bearing
 > pieces that need to be readable before the rest is written.
 
+## eGFR Readout Timing and Phased Scenario Impact
+
+The eGFR readout drives the scenario multiplier mechanism, but the multiplier is not
+applied as a single step at one year. The wk 106 readout is timed from trial enrollment
+(not drug approval), so it does not align cleanly with the US launch year. Backsolving
+from the AZ I CAN trial's April 2026 wk 34 interim readout:
+
+- First-cohort patients reach wk 106 around **September 2027** — this is the
+  `egfr_signal_year`. By this point investigators see enough data to discuss it at
+  congresses, and prescribers begin to anticipate the formal readout.
+- Formal LPLV-based topline analysis lands around **mid-2028** — this is the
+  `egfr_readout_year`. This is when the full data response materializes in commercial
+  behavior.
+
+The model applies a phased multiplier in `core.revenue.get_scenario_multiplier`:
+
+| Year window | Multiplier |
+|---|---|
+| Pre-signal (< 2027) | 1.0 (no impact) |
+| Signal year (2027) | `1.0 + egfr_signal_partial_strength × (full_multiplier − 1.0)` |
+| Readout year onward (≥ 2028) | `full_multiplier` |
+
+`egfr_signal_partial_strength` (default **0.5**) parameterizes the anticipation strength
+in the signal year. The three-phase pattern is visible in the Revenue and Share of
+Treated charts: scenarios overlap in 2026, diverge partially in 2027 (about half the
+final separation), and diverge fully from 2028 onward.
+
 ## Combination Targeted Therapy Not Modeled
 
 Combination targeted therapy is not modeled in v2. Patients who would adopt Ultomiris as

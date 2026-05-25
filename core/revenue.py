@@ -20,6 +20,23 @@ from data.competitive_landscape import COMPETITOR_LAUNCH_YEARS, DRUG_ATTRIBUTES
 logger = logging.getLogger(__name__)
 
 
+def get_scenario_multiplier(year: int, scenario_params: dict, launch_params: dict) -> float:
+    """Three-phase eGFR scenario multiplier.
+
+    Pre-signal year: 1.0 (no scenario impact).
+    Signal year (first-cohort wk 106 readout, e.g. 2027): partial impact from
+    prescriber anticipation = 1.0 + partial_strength × (full_multiplier − 1.0).
+    Readout year onward (LPLV-based topline, e.g. 2028+): full multiplier.
+    """
+    full_mult = scenario_params["share_multiplier"]
+    if year < launch_params["egfr_signal_year"]:
+        return 1.0
+    elif year < launch_params["egfr_readout_year"]:
+        return 1.0 + launch_params["egfr_signal_partial_strength"] * (full_mult - 1.0)
+    else:
+        return full_mult
+
+
 @dataclass
 class YearlyRevenue:
     """Revenue snapshot for a single forecast year across all eGFR scenarios."""
@@ -111,9 +128,7 @@ def compute_new_starts_per_year(
         drug_attributes = DRUG_ATTRIBUTES
 
     launch_year = params["launch"]["us_launch_year"]
-    egfr_readout_year = params["launch"]["egfr_readout_year"]
     scenario = params["egfr_readout_scenarios"][scenario_name]
-    multiplier = scenario["share_multiplier"]
     weights = params["conjoint"]["attribute_weights"]
     logit = params["conjoint"]["logit_lambda"]
 
@@ -131,11 +146,12 @@ def compute_new_starts_per_year(
         active = get_active_drugs_for_year(year, competitor_launch_years)
         shares = utilities_to_shares(utilities, logit, active)
 
-        if year >= egfr_readout_year and "ultomiris" in active and multiplier != 1.0:
+        effective_mult = get_scenario_multiplier(year, scenario, params["launch"])
+        if "ultomiris" in active and effective_mult != 1.0:
             ultomiris_raw = shares["ultomiris"]
-            renorm = 1.0 + ultomiris_raw * (multiplier - 1.0)
+            renorm = 1.0 + ultomiris_raw * (effective_mult - 1.0)
             shares = {
-                d: (s * multiplier if d == "ultomiris" else s) / renorm
+                d: (s * effective_mult if d == "ultomiris" else s) / renorm
                 for d, s in shares.items()
             }
 

@@ -82,11 +82,57 @@ def test_expected_value_is_probability_weighted(forecast):
     assert yr.expected_value_revenue == pytest.approx(expected)
 
 
-def test_scenarios_identical_before_readout_year(forecast):
-    """At year 2028 (pre-readout=2029), the three scenarios have identical revenue."""
-    yr = forecast[2028]
-    vals = list(yr.revenues_by_scenario.values())
+def test_pre_signal_year_no_scenario_impact(bass_fit, forecast_years):
+    """In 2026 (pre-signal), all eGFR scenarios produce identical Ultomiris new starts (helper returns 1.0)."""
+    from core.revenue import get_scenario_multiplier
+
+    p_fit, q_fit = bass_fit
+    launch = DEFAULTS["launch"]
+    year_pre = launch["egfr_signal_year"] - 1
+
+    for s_name, scenario in DEFAULTS["egfr_readout_scenarios"].items():
+        assert get_scenario_multiplier(year_pre, scenario, launch) == 1.0
+
+    ult_new = {
+        s: compute_new_starts_per_year(forecast_years, s, DEFAULTS, p_fit, q_fit)["ultomiris"][year_pre]
+        for s in DEFAULTS["egfr_readout_scenarios"]
+    }
+    vals = list(ult_new.values())
     assert all(v == pytest.approx(vals[0]) for v in vals)
+
+
+def test_signal_year_partial_impact(bass_fit, forecast_years):
+    """At signal year (2027), Ultomiris share-of-new-starts diff (strong − weak) ≈ 50% of the readout year diff."""
+    from core.revenue import compute_class_new_starts_per_year
+
+    p_fit, q_fit = bass_fit
+    class_new = compute_class_new_starts_per_year(forecast_years, DEFAULTS, p_fit, q_fit)
+    strong = compute_new_starts_per_year(forecast_years, "strongly_positive", DEFAULTS, p_fit, q_fit)["ultomiris"]
+    weak = compute_new_starts_per_year(forecast_years, "weak_neutral", DEFAULTS, p_fit, q_fit)["ultomiris"]
+
+    signal_year = DEFAULTS["launch"]["egfr_signal_year"]
+    readout_year = DEFAULTS["launch"]["egfr_readout_year"]
+
+    diff_signal_share = (strong[signal_year] - weak[signal_year]) / class_new[signal_year]
+    diff_readout_share = (strong[readout_year] - weak[readout_year]) / class_new[readout_year]
+
+    assert diff_signal_share > 0
+    assert diff_readout_share > 0
+    ratio = diff_signal_share / diff_readout_share
+    assert 0.40 < ratio < 0.60, f"signal/readout share-diff ratio: {ratio:.3f} (expected ~0.5)"
+
+
+def test_readout_year_full_impact(bass_fit, forecast_years):
+    """From readout year (2028) onward, Ultomiris new starts strictly ordered strong > modest > weak."""
+    p_fit, q_fit = bass_fit
+    strong = compute_new_starts_per_year(forecast_years, "strongly_positive", DEFAULTS, p_fit, q_fit)["ultomiris"]
+    modest = compute_new_starts_per_year(forecast_years, "modestly_positive", DEFAULTS, p_fit, q_fit)["ultomiris"]
+    weak = compute_new_starts_per_year(forecast_years, "weak_neutral", DEFAULTS, p_fit, q_fit)["ultomiris"]
+
+    readout_year = DEFAULTS["launch"]["egfr_readout_year"]
+    for year in [y for y in forecast_years if y >= readout_year]:
+        assert strong[year] > modest[year], f"{year}: strong {strong[year]:.1f} <= modest {modest[year]:.1f}"
+        assert modest[year] > weak[year], f"{year}: modest {modest[year]:.1f} <= weak {weak[year]:.1f}"
 
 
 def test_scenarios_diverge_after_readout_year(forecast):
