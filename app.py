@@ -107,7 +107,7 @@ def _build_source_of_business_chart(forecast_years: list[int], params: dict) -> 
     launch_year = params["launch"]["us_launch_year"]
     post_launch = [y for y in forecast_years if y >= launch_year]
     mixes = {
-        y: source_of_business_by_year(y - launch_year, params["source_of_business"])
+        y: source_of_business_by_year(y - launch_year)
         for y in post_launch
     }
     fig = go.Figure()

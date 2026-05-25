@@ -52,16 +52,9 @@ DEFAULTS = {
         },
         "logit_lambda": 0.5,                           # softmax steepness
     },
-    # Mechanism-based source-of-business buckets (year 1-5 mix; year 6+ shift
-    # is hardcoded in core/source_of_business.py).
-    "source_of_business": {
-        "treatment_naive": 0.55,
-        "switch_from_corticosteroid": 0.08,            # Tarpeyo
-        "switch_from_endothelin": 0.07,                # Filspari, Vanrafia
-        "switch_from_oral_complement": 0.03,           # Fabhalta
-        "switch_from_april_baff": 0.10,                # Voyxact, Atacicept, Povetacicept
-        "addon_to_existing": 0.17,
-    },
+    # Source-of-business mix is computed via linear interpolation between
+    # EARLY_MIX (year 0) and MATURE_MIX (year >= 8) inside
+    # core/source_of_business.py — anchor constants live in that module, not here.
     "persistence": {
         "year_1_persistence": 0.75,                    # range 0.65-0.85
         "year_2plus_persistence": 0.85,                # range 0.75-0.92
