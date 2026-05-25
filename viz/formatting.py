@@ -46,12 +46,19 @@ COMPETITOR_PALETTE: dict[str, str] = {
 }
 
 
-def fmt_currency(x: float) -> str:
-    """Currency with B / M / raw suffix."""
+def fmt_currency(x: float, scale_precision: int | None = None) -> str:
+    """Currency with B / M / raw suffix.
+
+    `scale_precision` overrides the default decimals on the scaled value:
+    billions default 2 (e.g. $4.82B); millions default 0 (e.g. $825M).
+    Pass scale_precision=0 to suppress decimals at every scale.
+    """
     if abs(x) >= 1e9:
-        return f"${x / 1e9:.2f}B"
+        p = scale_precision if scale_precision is not None else 2
+        return f"${x / 1e9:.{p}f}B"
     if abs(x) >= 1e6:
-        return f"${x / 1e6:.0f}M"
+        p = scale_precision if scale_precision is not None else 0
+        return f"${x / 1e6:.{p}f}M"
     return f"${x:,.0f}"
 
 

@@ -30,6 +30,10 @@ def build_analog_overlay(
     cum_ultomiris = bass_cumulative_adoption(t_curve, p_adj, q_fit, tarpeyo_market_potential)
 
     fig = go.Figure()
+    _hover = (
+        "<b>%{fullData.name}</b><br>Years since launch: %{x:.2f}<br>"
+        "Cumulative patients: %{y:,.2f}<extra></extra>"
+    )
     fig.add_trace(
         go.Scatter(
             x=t_obs,
@@ -37,6 +41,7 @@ def build_analog_overlay(
             mode="markers",
             name="Tarpeyo (observed)",
             marker=dict(color=GREY_DARK, size=8),
+            hovertemplate=_hover,
         )
     )
     fig.add_trace(
@@ -46,6 +51,7 @@ def build_analog_overlay(
             mode="lines",
             name=f"Tarpeyo Bass fit (p={p_fit:.3f}, q={q_fit:.3f})",
             line=dict(color=GREY_MEDIUM, width=2),
+            hovertemplate=_hover,
         )
     )
     fig.add_trace(
@@ -55,6 +61,7 @@ def build_analog_overlay(
             mode="lines",
             name=f"Ultomiris projection (p x {params['bass']['p_ultomiris_adjustment']})",
             line=dict(color=ULTOMIRIS_COLOR, width=2, dash="dash"),
+            hovertemplate=_hover,
         )
     )
     fig.update_layout(

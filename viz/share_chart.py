@@ -2,13 +2,14 @@
 
 import plotly.graph_objects as go
 
-from viz.formatting import COMPETITOR_PALETTE
+from viz.formatting import ALEXION_BLUE, COMPETITOR_PALETTE
 
 
 def build_share_chart(
     forecast_years: list[int],
     drug_stocks: dict[str, dict[int, float]],
     launch_years: dict[str, int] | None = None,
+    highlighted_drug: str | None = None,
 ) -> go.Figure:
     """Stacked area of per-drug share of active treated stock per year.
 
@@ -33,6 +34,12 @@ def build_share_chart(
 
     fig = go.Figure()
     for drug in drugs_order:
+        if highlighted_drug is None:
+            color = COMPETITOR_PALETTE.get(drug)
+        elif drug == highlighted_drug:
+            color = ALEXION_BLUE
+        else:
+            color = "#E0E0E0"
         ys = [share_by_year[y].get(drug, 0.0) for y in forecast_years]
         fig.add_trace(
             go.Scatter(
@@ -41,7 +48,7 @@ def build_share_chart(
                 mode="lines",
                 stackgroup="one",
                 name=drug.capitalize(),
-                line=dict(color=COMPETITOR_PALETTE.get(drug)),
+                line=dict(color=color),
             )
         )
 

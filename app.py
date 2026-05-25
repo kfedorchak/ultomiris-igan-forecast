@@ -32,15 +32,16 @@ st.set_page_config(
     layout="wide",
 )
 
-# Override Streamlit's default green inline-code styling with Alexion blue so
-# methodology and other backticked references brand-align with the rest of
-# the app.
+# Override Streamlit's default green inline-code styling with Alexion blue,
+# and force code to inherit the parent font-size so it doesn't render smaller
+# inside a caption or other body text.
 st.markdown(
     """
     <style>
-    [data-testid="stMarkdownContainer"] code {
+    code {
         color: #273386 !important;
         background-color: rgba(39, 51, 134, 0.08) !important;
+        font-size: 1em !important;
     }
     </style>
     """,
@@ -162,8 +163,18 @@ _SOB_COLORS = {
 }
 
 
-def _build_source_of_business_chart(forecast_years: list[int], params: dict) -> go.Figure:
-    """Stacked bar of Ultomiris new-start sources (descriptive attribution)."""
+def _build_source_of_business_chart(
+    forecast_years: list[int],
+    params: dict,
+    highlighted_bucket: str | None = None,
+) -> go.Figure:
+    """Stacked bar of Ultomiris new-start sources (descriptive attribution).
+
+    `highlighted_bucket`: when set to one of the SoB keys, the corresponding
+    bar segment renders in Alexion blue and every other segment fades to
+    light grey. When None, the default palette (treatment_naive in blue,
+    switch buckets in sequential greys) is used.
+    """
     launch_year = params["launch"]["us_launch_year"]
     post_launch = [y for y in forecast_years if y >= launch_year]
     mixes = {
@@ -171,13 +182,23 @@ def _build_source_of_business_chart(forecast_years: list[int], params: dict) -> 
         for y in post_launch
     }
     fig = go.Figure()
-    for source, color in _SOB_COLORS.items():
+    for source, default_color in _SOB_COLORS.items():
+        if highlighted_bucket is None:
+            color = default_color
+        elif source == highlighted_bucket:
+            color = _ALEXION_BLUE
+        else:
+            color = "#E0E0E0"
         fig.add_trace(
             go.Bar(
                 x=post_launch,
                 y=[mixes[y].get(source, 0.0) for y in post_launch],
                 name=source.replace("_", " ").title(),
                 marker_color=color,
+                hovertemplate=(
+                    "<b>%{fullData.name}</b><br>Year: %{x}<br>"
+                    "Share: %{y:.1%}<extra></extra>"
+                ),
             )
         )
     fig.update_layout(
@@ -236,9 +257,9 @@ with st.sidebar:
     st.header("Scenario")
     scenario_options = {
         "expected_value": "Risk-adjusted (default)",
-        "strongly_positive": "Strongly positive eGFR (40%)",
-        "modestly_positive": "Modestly positive eGFR (40%)",
-        "weak_neutral": "Weak / neutral eGFR (20%)",
+        "strongly_positive": "Strongly positive eGFR (p=40%)",
+        "modestly_positive": "Modestly positive eGFR (p=40%)",
+        "weak_neutral": "Weak / neutral eGFR (p=20%)",
     }
     selected_scenario = st.radio(
         "Display scenario",
@@ -398,29 +419,67 @@ with col_tor:
         width="stretch",
     )
 
+st.divider()
 
-# ──────────────────────────── SoB | analog overlay ─────────────────────
 
-col_sob, col_ana = st.columns(2)
+# ──────────────────────────── SoB | Share of Treated ──────────────────
+
+_SOB_PILL_TO_KEY = {
+    "All": None,
+    "Treatment naive": "treatment_naive",
+    "Corticosteroid": "switch_from_corticosteroid",
+    "Endothelin": "switch_from_endothelin",
+    "Oral complement": "switch_from_oral_complement",
+    "APRIL/BAFF": "switch_from_april_baff",
+}
+
+drug_stocks = cached_per_drug_stocks(phash, params, TARPEYO_MARKET_POTENTIAL_2022, selected_scenario)
+
+col_sob, col_share = st.columns(2)
 with col_sob:
+    _selected_pill = st.pills(
+        "Highlight a source",
+        options=list(_SOB_PILL_TO_KEY.keys()),
+        default="All",
+        key="sob_highlight",
+    )
+    _highlighted_bucket = _SOB_PILL_TO_KEY.get(_selected_pill or "All")
     st.plotly_chart(
-        _build_source_of_business_chart(forecast_years, params),
+        _build_source_of_business_chart(forecast_years, params, _highlighted_bucket),
         width="stretch",
     )
+with col_share:
+    _share_pill_options = ["All"] + [d.capitalize() for d in COMPETITOR_LAUNCH_YEARS]
+    _selected_drug_pill = st.pills(
+        "Highlight a drug",
+        options=_share_pill_options,
+        default="All",
+        key="share_highlight",
+    )
+    _highlighted_drug = (
+        None
+        if _selected_drug_pill in (None, "All")
+        else _selected_drug_pill.lower()
+    )
+    st.plotly_chart(
+        build_share_chart(
+            forecast_years,
+            drug_stocks,
+            launch_years=COMPETITOR_LAUNCH_YEARS,
+            highlighted_drug=_highlighted_drug,
+        ),
+        width="stretch",
+    )
+
+st.divider()
+
+
+# ──────────────────────────── Analog overlay | Weights bar ────────────
+
+col_ana, col_weights = st.columns(2)
 with col_ana:
     st.plotly_chart(
         build_analog_overlay(load_tarpeyo(), TARPEYO_MARKET_POTENTIAL_2022, params),
-        width="stretch",
-    )
-
-
-# ──────────────────────────── competitive share ────────────────────────
-
-drug_stocks = cached_per_drug_stocks(phash, params, TARPEYO_MARKET_POTENTIAL_2022, selected_scenario)
-col_share, col_weights = st.columns(2)
-with col_share:
-    st.plotly_chart(
-        build_share_chart(forecast_years, drug_stocks, launch_years=COMPETITOR_LAUNCH_YEARS),
         width="stretch",
     )
 with col_weights:
@@ -429,22 +488,18 @@ with col_weights:
         width="stretch",
     )
 
+st.divider()
+
 render_conjoint_table(2032, params, DRUG_ATTRIBUTES, COMPETITOR_LAUNCH_YEARS)
 st.caption(
     "**How the conjoint drives Share of Treated Patients:** conjoint scores reflect prescriber "
     "preferences across drug attributes — they govern *share allocation* (which drug a new patient "
-    "receives) via utility-weighted softmax. Each drug's attribute scores (table above, 1-10, "
-    "higher = better) × the attribute importance weights (bar chart) → utility → softmax → "
-    "share of new starts → accumulating stock → share of treated patients. Scores evolve "
+    "receives) via utility-weighted softmax. Mechanically: "
+    "`attribute scores × weights → utility → softmax → share of new starts → accumulating stock → "
+    "share of treated patients`. Scores in the table above (1-10, higher = better) evolve "
     "year-over-year via asymptotic maturation on mechanism familiarity, safety, and payer access; "
-    "inactive drugs are hidden.\n\n"
-    "Conjoint and the sidebar drivers are intentionally independent dimensions of the model. "
-    "The sidebar sliders govern *volume* (adoption rate and pool dynamics — how many new patients "
-    "are allocated); the conjoint governs *share* (which drug each one receives). The table above "
+    "inactive drugs are hidden. Conjoint and the sidebar drivers are intentionally independent "
+    "dimensions of the model — the sidebar sliders govern *volume* (how many new patients are "
+    "allocated) while the conjoint governs *share* (which drug each one receives). The table above "
     "responds only to the year selector, not to the sidebar sliders."
-)
-
-st.caption(
-    "Prototype model. Default attribute scores, eGFR readout probabilities, and the "
-    "Tarpeyo trajectory placeholder require Kyle's review before final use — see README."
 )
