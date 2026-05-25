@@ -303,7 +303,7 @@ with st.sidebar:
     )
     diagnostic_expansion = st.slider(
         "Diagnostic expansion (annual)",
-        min_value=-0.02, max_value=0.12,
+        min_value=0.01, max_value=0.08,
         step=0.01, format="%.2f",
         key="diagnostic_expansion",
     )
