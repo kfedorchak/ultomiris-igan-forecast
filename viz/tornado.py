@@ -30,33 +30,54 @@ KEY_DRIVERS: list[TornadoDriver] = [
 ]
 
 
-def _cumulative_ev(
+def _cumulative_revenue(
+    params: dict,
+    tarpeyo_df: pd.DataFrame,
+    tarpeyo_market_potential: float,
+    scenario: str,
+) -> float:
+    """Cumulative revenue across the forecast horizon under the given scenario ('expected_value' = EV-weighted)."""
+    fc = run_forecast(params, tarpeyo_df, tarpeyo_market_potential)
+    if scenario == "expected_value":
+        return sum(yr.expected_value_revenue for yr in fc.values())
+    return sum(yr.revenues_by_scenario[scenario] for yr in fc.values())
+
+
+def _cumulative_at_bound(
     params: dict,
     driver: TornadoDriver,
     value: float,
     tarpeyo_df: pd.DataFrame,
     tarpeyo_market_potential: float,
+    scenario: str,
 ) -> float:
-    """Re-run forecast with one parameter swapped to `value`, return cumulative EV revenue across the horizon."""
+    """Re-run forecast with `driver` swapped to `value`, return cumulative revenue under `scenario`."""
     p = copy.deepcopy(params)
     p[driver.parent][driver.key] = value
-    fc = run_forecast(p, tarpeyo_df, tarpeyo_market_potential)
-    return sum(yr.expected_value_revenue for yr in fc.values())
+    return _cumulative_revenue(p, tarpeyo_df, tarpeyo_market_potential, scenario)
+
+
+_SCENARIO_TITLE = {
+    "expected_value": "cumulative EV revenue",
+    "strongly_positive": "cumulative revenue (strongly positive)",
+    "modestly_positive": "cumulative revenue (modestly positive)",
+    "weak_neutral": "cumulative revenue (weak/neutral)",
+}
 
 
 def build_tornado_chart(
     params: dict,
     tarpeyo_df: pd.DataFrame,
     tarpeyo_market_potential: float,
+    scenario: str = "expected_value",
 ) -> go.Figure:
-    """Horizontal tornado of low/high deltas from base cumulative EV revenue across the forecast horizon."""
-    base_fc = run_forecast(params, tarpeyo_df, tarpeyo_market_potential)
-    base_ev = sum(yr.expected_value_revenue for yr in base_fc.values())
+    """Horizontal tornado of low/high deltas from base cumulative revenue under the selected scenario."""
+    base_ev = _cumulative_revenue(params, tarpeyo_df, tarpeyo_market_potential, scenario)
 
     impacts = []
     for d in KEY_DRIVERS:
-        low_ev = _cumulative_ev(params, d, d.low, tarpeyo_df, tarpeyo_market_potential)
-        high_ev = _cumulative_ev(params, d, d.high, tarpeyo_df, tarpeyo_market_potential)
+        low_ev = _cumulative_at_bound(params, d, d.low, tarpeyo_df, tarpeyo_market_potential, scenario)
+        high_ev = _cumulative_at_bound(params, d, d.high, tarpeyo_df, tarpeyo_market_potential, scenario)
         low_delta = low_ev - base_ev
         high_delta = high_ev - base_ev
         magnitude = abs(low_delta) + abs(high_delta)
@@ -86,7 +107,7 @@ def build_tornado_chart(
         )
     )
     fig.update_layout(
-        title=f"Sensitivity (cumulative EV revenue) — base ${base_ev / 1e9:.2f}B",
+        title=f"Sensitivity ({_SCENARIO_TITLE[scenario]}) — base ${base_ev / 1e9:.2f}B",
         xaxis=dict(
             title="Δ from base cumulative EV (USD)",
             tickformat="$.2s",

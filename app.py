@@ -45,8 +45,25 @@ def cached_forecast(params_hash: str, _params: dict, market_potential: float):
 
 
 @st.cache_data
-def cached_tornado(params_hash: str, _params: dict, market_potential: float):
-    return build_tornado_chart(_params, load_tarpeyo(), market_potential)
+def cached_tornado(params_hash: str, _params: dict, market_potential: float, scenario: str):
+    return build_tornado_chart(_params, load_tarpeyo(), market_potential, scenario=scenario)
+
+
+def scenario_revenue(yearly, scenario: str) -> float:
+    """Per-year revenue under `scenario` ('expected_value' returns EV-weighted)."""
+    if scenario == "expected_value":
+        return yearly.expected_value_revenue
+    return yearly.revenues_by_scenario[scenario]
+
+
+def scenario_treated(yearly, scenario: str, scenario_probs: dict) -> float:
+    """Per-year treated patients under `scenario` (EV = probability-weighted across scenarios)."""
+    if scenario == "expected_value":
+        return sum(
+            sp["probability"] * yearly.treated_patients_by_scenario[s]
+            for s, sp in scenario_probs.items()
+        )
+    return yearly.treated_patients_by_scenario[scenario]
 
 
 # ──────────────────────────── source-of-business chart (inline) ────────
@@ -222,28 +239,32 @@ forecast_years = sorted(forecast.keys())
 
 # ──────────────────────────── KPI strip ────────────────────────────────
 
-peak_record = max(forecast.values(), key=lambda r: r.expected_value_revenue)
-peak_year = peak_record.year
-peak_ev = peak_record.expected_value_revenue
-peak_treated_modest = max(
-    yr.treated_patients_by_scenario["modestly_positive"] for yr in forecast.values()
-)
-cumulative_ev = sum(yr.expected_value_revenue for yr in forecast.values())
+scenarios_meta = params["egfr_readout_scenarios"]
+revs_by_year = {y: scenario_revenue(forecast[y], selected_scenario) for y in forecast_years}
+treats_by_year = {y: scenario_treated(forecast[y], selected_scenario, scenarios_meta) for y in forecast_years}
+
+peak_year = max(revs_by_year, key=revs_by_year.get)
+peak_rev = revs_by_year[peak_year]
+peak_treated = max(treats_by_year.values())
+cumulative_rev = sum(revs_by_year.values())
 launch_year = params["launch"]["us_launch_year"]
+
+scenario_help = f"Scenario: {scenario_options[selected_scenario]}"
 
 k1, k2, k3, k4, k5, k6 = st.columns(6)
 k1.metric("Launch year", str(launch_year))
-k2.metric("Peak year", str(peak_year))
-k3.metric("Years to peak", str(peak_year - launch_year))
-k4.metric("Peak treated (modest)", fmt_patients(peak_treated_modest))
-k5.metric("Peak EV revenue", fmt_currency(peak_ev))
-k6.metric("Cumulative EV revenue", fmt_currency(cumulative_ev))
+k2.metric("Peak year", str(peak_year), help=scenario_help)
+k3.metric("Years to peak", str(peak_year - launch_year), help=scenario_help)
+k4.metric("Peak treated", fmt_patients(peak_treated), help=scenario_help)
+k5.metric("Peak revenue", fmt_currency(peak_rev), help=scenario_help)
+k6.metric("Cumulative revenue", fmt_currency(cumulative_rev), help=scenario_help)
 
 
 # ──────────────────────────── funnel ───────────────────────────────────
 
 st.subheader("Patient funnel")
 funnel_year = 2032 if 2032 in forecast else peak_year
+st.caption(f"Year {funnel_year}, {scenario_options[selected_scenario]}")
 pool = compute_patient_pool(
     funnel_year,
     params["launch"]["forecast_start_year"],
@@ -251,7 +272,7 @@ pool = compute_patient_pool(
     params["diagnostic_expansion"]["annual_growth_rate"],
 )
 class_addressable = pool.high_risk * params["bass"]["market_potential_fraction"]
-ultomiris_treated = forecast[funnel_year].treated_patients_by_scenario["modestly_positive"]
+ultomiris_treated = scenario_treated(forecast[funnel_year], selected_scenario, scenarios_meta)
 st.plotly_chart(
     build_funnel_figure(
         funnel_year,
@@ -275,7 +296,7 @@ with col_rev:
     )
 with col_tor:
     st.plotly_chart(
-        cached_tornado(phash, params, TARPEYO_MARKET_POTENTIAL_2022),
+        cached_tornado(phash, params, TARPEYO_MARKET_POTENTIAL_2022, selected_scenario),
         width="stretch",
     )
 
