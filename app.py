@@ -8,8 +8,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from core.bass_model import fit_bass_to_tarpeyo
 from core.patient_flow import compute_patient_pool
-from core.revenue import run_forecast
+from core.revenue import compute_class_new_starts_per_year, compute_treated_stock, run_forecast
 from core.source_of_business import source_of_business_by_year
 from data.assumptions import DEFAULTS, TARPEYO_MARKET_POTENTIAL_2022
 from data.competitive_landscape import COMPETITOR_LAUNCH_YEARS, DRUG_ATTRIBUTES
@@ -47,6 +48,27 @@ def cached_forecast(params_hash: str, _params: dict, market_potential: float):
 @st.cache_data
 def cached_tornado(params_hash: str, _params: dict, market_potential: float, scenario: str):
     return build_tornado_chart(_params, load_tarpeyo(), market_potential, scenario=scenario)
+
+
+@st.cache_data
+def cached_class_active(params_hash: str, _params: dict, market_potential: float) -> dict[int, float]:
+    """Class-wide active treated patients per year (Bass over total_M + persistence cohorts, no share)."""
+    p_fit, q_fit = fit_bass_to_tarpeyo(
+        load_tarpeyo(),
+        market_potential,
+        fallback_p=_params["bass"]["innovation_p_default"],
+        fallback_q=_params["bass"]["imitation_q_default"],
+    )
+    fs = _params["launch"]["forecast_start_year"]
+    horizon = _params["launch"]["forecast_horizon_years"]
+    years = list(range(fs, fs + horizon))
+    class_new = compute_class_new_starts_per_year(years, _params, p_fit, q_fit)
+    return compute_treated_stock(
+        years,
+        class_new,
+        _params["persistence"]["year_1_persistence"],
+        _params["persistence"]["year_2plus_persistence"],
+    )
 
 
 def scenario_revenue(yearly, scenario: str) -> float:
@@ -272,6 +294,8 @@ pool = compute_patient_pool(
     params["diagnostic_expansion"]["annual_growth_rate"],
 )
 class_addressable = pool.high_risk * params["bass"]["market_potential_fraction"]
+class_active_stocks = cached_class_active(phash, params, TARPEYO_MARKET_POTENTIAL_2022)
+class_active_funnel = class_active_stocks[funnel_year]
 ultomiris_treated = scenario_treated(forecast[funnel_year], selected_scenario, scenarios_meta)
 st.plotly_chart(
     build_funnel_figure(
@@ -279,6 +303,7 @@ st.plotly_chart(
         pool.diagnosed_prevalent,
         pool.high_risk,
         class_addressable,
+        class_active_funnel,
         ultomiris_treated,
     ),
     width="stretch",

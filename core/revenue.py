@@ -28,36 +28,21 @@ class YearlyRevenue:
     expected_value_revenue: float
 
 
-def compute_new_starts_per_year(
+def compute_class_new_starts_per_year(
     forecast_years: list[int],
-    scenario_name: str,
     params: dict,
     p_fit: float,
     q_fit: float,
-    competitor_launch_years: dict[str, int] | None = None,
-    drug_attributes: dict[str, dict[str, float]] | None = None,
 ) -> dict[int, float]:
-    """Annual Ultomiris new starts under one eGFR scenario.
+    """Annual class-wide new starts (sum across all targeted IgAN therapies), no share allocation.
 
-    Bass models class-wide IgAN treated adoption against total_M = pool.high_risk x
-    market_potential_fraction (stable, share-independent). Total new starts are then
-    allocated to Ultomiris via softmax over active competitors. Scenario multiplier
-    on Ultomiris share gates on year >= egfr_readout_year. Pre-launch years return 0.
+    Bass models class-wide adoption against stable total_M = pool.high_risk x
+    market_potential_fraction. Pre-launch years return 0. Logs a warning if
+    year-over-year delta turns negative (would imply M(t) decreased).
     """
-    if competitor_launch_years is None:
-        competitor_launch_years = COMPETITOR_LAUNCH_YEARS
-    if drug_attributes is None:
-        drug_attributes = DRUG_ATTRIBUTES
-
     launch_year = params["launch"]["us_launch_year"]
     forecast_start_year = params["launch"]["forecast_start_year"]
-    egfr_readout_year = params["launch"]["egfr_readout_year"]
     p_adjusted = p_fit * params["bass"]["p_ultomiris_adjustment"]
-    scenario = params["egfr_readout_scenarios"][scenario_name]
-
-    utilities = compute_drug_utilities(
-        drug_attributes, params["conjoint"]["attribute_weights"]
-    )
 
     new_starts: dict[int, float] = {}
     prior_cumulative_total: float = 0.0
@@ -94,6 +79,48 @@ def compute_new_starts_per_year(
                 total_new,
             )
 
+        new_starts[year] = total_new
+        prior_cumulative_total = cumulative_total
+
+    return new_starts
+
+
+def compute_new_starts_per_year(
+    forecast_years: list[int],
+    scenario_name: str,
+    params: dict,
+    p_fit: float,
+    q_fit: float,
+    competitor_launch_years: dict[str, int] | None = None,
+    drug_attributes: dict[str, dict[str, float]] | None = None,
+) -> dict[int, float]:
+    """Annual Ultomiris new starts under one eGFR scenario.
+
+    Class-wide new starts (from compute_class_new_starts_per_year) are allocated
+    to Ultomiris via softmax over active competitors. Scenario multiplier on
+    Ultomiris share gates on year >= egfr_readout_year. Pre-launch years return 0.
+    """
+    if competitor_launch_years is None:
+        competitor_launch_years = COMPETITOR_LAUNCH_YEARS
+    if drug_attributes is None:
+        drug_attributes = DRUG_ATTRIBUTES
+
+    launch_year = params["launch"]["us_launch_year"]
+    egfr_readout_year = params["launch"]["egfr_readout_year"]
+    scenario = params["egfr_readout_scenarios"][scenario_name]
+
+    class_new = compute_class_new_starts_per_year(forecast_years, params, p_fit, q_fit)
+
+    utilities = compute_drug_utilities(
+        drug_attributes, params["conjoint"]["attribute_weights"]
+    )
+
+    new_starts: dict[int, float] = {}
+    for year in forecast_years:
+        if year < launch_year:
+            new_starts[year] = 0.0
+            continue
+
         active = get_active_drugs_for_year(year, competitor_launch_years)
         shares = utilities_to_shares(
             utilities, params["conjoint"]["logit_lambda"], active
@@ -102,8 +129,7 @@ def compute_new_starts_per_year(
         if year >= egfr_readout_year:
             ultomiris_share = ultomiris_share * scenario["share_multiplier"]
 
-        new_starts[year] = total_new * ultomiris_share
-        prior_cumulative_total = cumulative_total
+        new_starts[year] = class_new[year] * ultomiris_share
 
     return new_starts
 

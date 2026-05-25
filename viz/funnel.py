@@ -10,12 +10,19 @@ def build_funnel_figure(
     diagnosed_prevalent: float,
     high_risk: float,
     class_addressable: float,
+    class_active: float,
     ultomiris_treated: float,
 ) -> go.Figure:
-    """Plotly Funnel from diagnosed IgAN through to Ultomiris on-therapy at `year`."""
-    stages = ["Diagnosed IgAN", "High-risk", "Treated (class peak)", "Ultomiris on therapy"]
-    values = [diagnosed_prevalent, high_risk, class_addressable, ultomiris_treated]
-    colors = ["#BDBDBD", "#9E9E9E", "#757575", ULTOMIRIS_COLOR]
+    """Plotly Funnel: diagnosed -> high-risk -> class peak (long-run M) -> class active (this year) -> Ultomiris."""
+    stages = [
+        "Diagnosed IgAN",
+        "High-risk",
+        "Treated (class peak)",
+        f"Treated (class active, {year})",
+        "Ultomiris on therapy",
+    ]
+    values = [diagnosed_prevalent, high_risk, class_addressable, class_active, ultomiris_treated]
+    colors = ["#BDBDBD", "#9E9E9E", "#757575", "#616161", ULTOMIRIS_COLOR]
 
     fig = go.Figure(
         go.Funnel(
