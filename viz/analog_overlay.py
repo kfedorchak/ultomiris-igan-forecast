@@ -62,7 +62,8 @@ def build_analog_overlay(
         xaxis_title="Years since launch",
         yaxis_title="Cumulative patients (same market potential)",
         template="plotly_white",
-        height=400,
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3),
+        height=440,
+        margin=dict(b=110),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.4),
     )
     return fig

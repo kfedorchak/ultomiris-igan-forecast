@@ -50,11 +50,11 @@ def build_revenue_chart(
 
     fig.update_layout(
         title="US Net Revenue Forecast",
-        xaxis_title="Year",
-        yaxis_title="Net revenue (USD)",
+        xaxis=dict(title="Year", tickmode="linear", dtick=1),
+        yaxis=dict(title="Net revenue (USD)", tickformat="$.2s"),
         template="plotly_white",
-        height=400,
-        yaxis=dict(tickformat="$.2s"),
-        legend=dict(orientation="h", yanchor="bottom", y=-0.25),
+        height=440,
+        margin=dict(b=110),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.4),
     )
     return fig

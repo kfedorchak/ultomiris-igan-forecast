@@ -21,7 +21,7 @@ def build_funnel_figure(
         go.Funnel(
             y=stages,
             x=values,
-            textinfo="value+percent previous",
+            texttemplate="%{value:,.0f}  (%{percentPrevious:.1%} of prior)",
             marker=dict(color=colors),
         )
     )

@@ -21,42 +21,42 @@ class TornadoDriver:
 
 
 KEY_DRIVERS: list[TornadoDriver] = [
-    TornadoDriver("epi", "high_risk_pct", "% high-risk patients", 0.25, 0.50),
-    TornadoDriver("bass", "market_potential_fraction", "Peak treatment penetration", 0.40, 0.80),
-    TornadoDriver("bass", "p_ultomiris_adjustment", "IV/REMS friction (1=none)", 0.50, 0.90),
-    TornadoDriver("persistence", "year_2plus_persistence", "Annual persistence (y2+)", 0.70, 0.92),
-    TornadoDriver("pricing", "net_price_per_patient_year", "Net price ($/yr)", 350_000, 550_000),
-    TornadoDriver("diagnostic_expansion", "annual_growth_rate", "Diagnostic expansion (annual)", 0.00, 0.08),
+    TornadoDriver("epi", "high_risk_pct", "% high-risk patients", 0.20, 0.60),
+    TornadoDriver("bass", "market_potential_fraction", "Peak treatment penetration", 0.30, 0.85),
+    TornadoDriver("bass", "p_ultomiris_adjustment", "IV/REMS friction (1=none)", 0.30, 1.00),
+    TornadoDriver("persistence", "year_2plus_persistence", "Annual persistence (y2+)", 0.60, 0.95),
+    TornadoDriver("pricing", "net_price_per_patient_year", "Net price ($/yr)", 250_000, 700_000),
+    TornadoDriver("diagnostic_expansion", "annual_growth_rate", "Diagnostic expansion (annual)", -0.02, 0.12),
 ]
 
 
-def _run_at_bound(
+def _cumulative_ev(
     params: dict,
     driver: TornadoDriver,
     value: float,
     tarpeyo_df: pd.DataFrame,
     tarpeyo_market_potential: float,
-    target_year: int,
 ) -> float:
-    """Re-run forecast with one parameter swapped to `value`, return target-year EV revenue."""
+    """Re-run forecast with one parameter swapped to `value`, return cumulative EV revenue across the horizon."""
     p = copy.deepcopy(params)
     p[driver.parent][driver.key] = value
-    return run_forecast(p, tarpeyo_df, tarpeyo_market_potential)[target_year].expected_value_revenue
+    fc = run_forecast(p, tarpeyo_df, tarpeyo_market_potential)
+    return sum(yr.expected_value_revenue for yr in fc.values())
 
 
 def build_tornado_chart(
     params: dict,
     tarpeyo_df: pd.DataFrame,
     tarpeyo_market_potential: float,
-    target_year: int = 2032,
 ) -> go.Figure:
-    """Horizontal tornado of low/high deltas from base at `target_year`, sorted by magnitude (largest at top)."""
-    base_ev = run_forecast(params, tarpeyo_df, tarpeyo_market_potential)[target_year].expected_value_revenue
+    """Horizontal tornado of low/high deltas from base cumulative EV revenue across the forecast horizon."""
+    base_fc = run_forecast(params, tarpeyo_df, tarpeyo_market_potential)
+    base_ev = sum(yr.expected_value_revenue for yr in base_fc.values())
 
     impacts = []
     for d in KEY_DRIVERS:
-        low_ev = _run_at_bound(params, d, d.low, tarpeyo_df, tarpeyo_market_potential, target_year)
-        high_ev = _run_at_bound(params, d, d.high, tarpeyo_df, tarpeyo_market_potential, target_year)
+        low_ev = _cumulative_ev(params, d, d.low, tarpeyo_df, tarpeyo_market_potential)
+        high_ev = _cumulative_ev(params, d, d.high, tarpeyo_df, tarpeyo_market_potential)
         low_delta = low_ev - base_ev
         high_delta = high_ev - base_ev
         magnitude = abs(low_delta) + abs(high_delta)
@@ -72,7 +72,7 @@ def build_tornado_chart(
             y=labels,
             x=[i[1] for i in impacts],
             orientation="h",
-            name="Low bound",
+            name="Low driver value",
             marker_color="#D9534F",
         )
     )
@@ -81,13 +81,13 @@ def build_tornado_chart(
             y=labels,
             x=[i[2] for i in impacts],
             orientation="h",
-            name="High bound",
+            name="High driver value",
             marker_color="#5CB85C",
         )
     )
     fig.update_layout(
-        title=f"Sensitivity ({target_year} EV revenue) — base case ${base_ev / 1e6:.0f}M",
-        xaxis_title="Δ from base case (USD)",
+        title=f"Sensitivity (cumulative EV revenue) — base ${base_ev / 1e9:.2f}B",
+        xaxis_title="Δ from base cumulative EV (USD)",
         xaxis=dict(tickformat="$.2s", zeroline=True, zerolinewidth=2, zerolinecolor="black"),
         template="plotly_white",
         height=400,

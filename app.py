@@ -45,8 +45,8 @@ def cached_forecast(params_hash: str, _params: dict, market_potential: float):
 
 
 @st.cache_data
-def cached_tornado(params_hash: str, _params: dict, market_potential: float, target_year: int):
-    return build_tornado_chart(_params, load_tarpeyo(), market_potential, target_year=target_year)
+def cached_tornado(params_hash: str, _params: dict, market_potential: float):
+    return build_tornado_chart(_params, load_tarpeyo(), market_potential)
 
 
 # ──────────────────────────── source-of-business chart (inline) ────────
@@ -82,14 +82,40 @@ def _build_source_of_business_chart(forecast_years: list[int], params: dict) -> 
     fig.update_layout(
         barmode="stack",
         title="Source of New Patient Starts",
-        xaxis_title="Year",
+        xaxis=dict(title="Year", tickmode="linear", dtick=1),
         yaxis_title="Share of starts",
         yaxis_tickformat=".0%",
         template="plotly_white",
-        height=400,
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3),
+        height=440,
+        margin=dict(b=110),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.4),
     )
     return fig
+
+
+# ──────────────────────────── slider defaults + reset callback ─────────
+
+SLIDER_DEFAULTS: dict[str, float | int] = {
+    "high_risk_pct": DEFAULTS["epi"]["high_risk_pct"],
+    "market_potential_fraction": DEFAULTS["bass"]["market_potential_fraction"],
+    "p_ultomiris_adjustment": DEFAULTS["bass"]["p_ultomiris_adjustment"],
+    "year_2plus_persistence": DEFAULTS["persistence"]["year_2plus_persistence"],
+    "net_price_k": DEFAULTS["pricing"]["net_price_per_patient_year"] // 1000,
+    "diagnostic_expansion": DEFAULTS["diagnostic_expansion"]["annual_growth_rate"],
+}
+
+
+def reset_to_defaults() -> None:
+    """Reset every slider's session_state entry back to DEFAULTS."""
+    for k, v in SLIDER_DEFAULTS.items():
+        st.session_state[k] = v
+
+
+# Initialize session_state once on first render. Avoids the "value + key" warning
+# that fires when Streamlit sees both a value= and a pre-existing session_state entry.
+for _k, _v in SLIDER_DEFAULTS.items():
+    if _k not in st.session_state:
+        st.session_state[_k] = _v
 
 
 # ──────────────────────────── header ────────────────────────────────────
@@ -120,51 +146,42 @@ with st.sidebar:
 
     high_risk_pct = st.slider(
         "% high-risk patients",
-        min_value=0.25,
-        max_value=0.50,
-        value=DEFAULTS["epi"]["high_risk_pct"],
-        step=0.01,
-        format="%.2f",
+        min_value=0.20, max_value=0.60,
+        step=0.01, format="%.2f",
+        key="high_risk_pct",
     )
     market_potential_fraction = st.slider(
         "Peak treatment penetration",
-        min_value=0.40,
-        max_value=0.80,
-        value=DEFAULTS["bass"]["market_potential_fraction"],
-        step=0.01,
-        format="%.2f",
+        min_value=0.30, max_value=0.85,
+        step=0.01, format="%.2f",
+        key="market_potential_fraction",
     )
     p_ultomiris_adjustment = st.slider(
         "IV/REMS friction (1 = none)",
-        min_value=0.50,
-        max_value=0.90,
-        value=DEFAULTS["bass"]["p_ultomiris_adjustment"],
-        step=0.05,
-        format="%.2f",
+        min_value=0.30, max_value=1.00,
+        step=0.05, format="%.2f",
+        key="p_ultomiris_adjustment",
     )
     year_2plus_persistence = st.slider(
         "Annual persistence (Y2+)",
-        min_value=0.70,
-        max_value=0.92,
-        value=DEFAULTS["persistence"]["year_2plus_persistence"],
-        step=0.01,
-        format="%.2f",
+        min_value=0.60, max_value=0.95,
+        step=0.01, format="%.2f",
+        key="year_2plus_persistence",
     )
     net_price_k = st.slider(
         "Net price ($K / patient-year)",
-        min_value=350,
-        max_value=550,
-        value=DEFAULTS["pricing"]["net_price_per_patient_year"] // 1000,
+        min_value=250, max_value=700,
         step=10,
+        key="net_price_k",
     )
     diagnostic_expansion = st.slider(
         "Diagnostic expansion (annual)",
-        min_value=0.00,
-        max_value=0.08,
-        value=DEFAULTS["diagnostic_expansion"]["annual_growth_rate"],
-        step=0.01,
-        format="%.2f",
+        min_value=-0.02, max_value=0.12,
+        step=0.01, format="%.2f",
+        key="diagnostic_expansion",
     )
+
+    st.button("↺ Reset drivers to defaults", on_click=reset_to_defaults)
 
     st.divider()
     with st.expander("📚 Methodology"):
@@ -213,11 +230,12 @@ peak_treated_modest = max(
 )
 launch_year = params["launch"]["us_launch_year"]
 
-k1, k2, k3, k4 = st.columns(4)
-k1.metric("Peak EV revenue", fmt_currency(peak_ev), help=f"Year {peak_year}")
-k2.metric("Peak treated (modest scenario)", fmt_patients(peak_treated_modest))
-k3.metric("Years post-launch to peak", str(peak_year - launch_year))
-k4.metric("Launch year", str(launch_year))
+k1, k2, k3, k4, k5 = st.columns(5)
+k1.metric("Launch year", str(launch_year))
+k2.metric("Peak year", str(peak_year))
+k3.metric("Years to peak", str(peak_year - launch_year))
+k4.metric("Peak treated (modest)", fmt_patients(peak_treated_modest))
+k5.metric("Peak EV revenue", fmt_currency(peak_ev))
 
 
 # ──────────────────────────── funnel ───────────────────────────────────
@@ -255,7 +273,7 @@ with col_rev:
     )
 with col_tor:
     st.plotly_chart(
-        cached_tornado(phash, params, TARPEYO_MARKET_POTENTIAL_2022, 2032),
+        cached_tornado(phash, params, TARPEYO_MARKET_POTENTIAL_2022),
         width="stretch",
     )
 
