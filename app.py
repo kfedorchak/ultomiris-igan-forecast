@@ -12,7 +12,7 @@ from core.bass_model import fit_bass_to_tarpeyo
 from core.patient_flow import compute_patient_pool
 from core.revenue import compute_class_new_starts_per_year, compute_treated_stock, run_forecast
 from core.source_of_business import source_of_business_by_year
-from data.assumptions import DEFAULTS, TARPEYO_MARKET_POTENTIAL_2022
+from data.assumptions import CLASS_TREATED_AT_ULTOMIRIS_LAUNCH, DEFAULTS, TARPEYO_MARKET_POTENTIAL_2022
 from data.competitive_landscape import COMPETITOR_LAUNCH_YEARS, DRUG_ATTRIBUTES
 from viz.analog_overlay import build_analog_overlay
 from viz.formatting import fmt_currency, fmt_patients
@@ -63,11 +63,13 @@ def cached_class_active(params_hash: str, _params: dict, market_potential: float
     horizon = _params["launch"]["forecast_horizon_years"]
     years = list(range(fs, fs + horizon))
     class_new = compute_class_new_starts_per_year(years, _params, p_fit, q_fit)
+    launch_year = _params["launch"]["us_launch_year"]
     return compute_treated_stock(
         years,
         class_new,
         _params["persistence"]["year_1_persistence"],
         _params["persistence"]["year_2plus_persistence"],
+        veteran_cohort=(launch_year, CLASS_TREATED_AT_ULTOMIRIS_LAUNCH),
     )
 
 

@@ -42,6 +42,14 @@ SOURCES = {
         "27,000 = 2022 high-risk pool (~54,000) x 0.50 first-mover penetration. "
         "See market_potential_penetration_assumptions for rationale on the 50%/60% asymmetry."
     ),
+    "class_treated_at_ultomiris_launch": (
+        "PLACEHOLDER: ~20,000 active patients on a targeted IgAN therapy at Ultomiris "
+        "launch (start of 2027). Derived from issuer disclosures: Tarpeyo ~7,500 "
+        "end-2024 (Asahi Kasei), Filspari ~4,500 end-2024 (Travere 10-Q), Fabhalta "
+        "~2,000 end-2024 (Novartis, early launch), with Vanrafia/Voyxact early-ramp "
+        "additions through 2025-2026 and continuing class growth. Kyle replaces "
+        "with reconciled actuals before final use."
+    ),
     "p_ultomiris_adjustment": (
         "Multiplier on Tarpeyo-fitted innovation rate to reflect IV q8w + meningococcal "
         "REMS friction vs. Tarpeyo's oral self-administered profile. Analyst consensus "

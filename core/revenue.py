@@ -139,10 +139,19 @@ def compute_treated_stock(
     new_starts: dict[int, float],
     persistence_y1: float,
     persistence_y2plus: float,
+    veteran_cohort: tuple[int, float] | None = None,
 ) -> dict[int, float]:
-    """Discrete cohort-based stock. Year Y cohort: full count at Y, x persistence_y1 at Y+1, x persistence_y2plus thereafter."""
+    """Discrete cohort-based stock. Year Y cohort: full count at Y, x persistence_y1 at Y+1, x persistence_y2plus thereafter.
+
+    `veteran_cohort = (year, value)` optionally seeds a single cohort of patients
+    already on therapy at `year` (e.g. pre-launch carryover stock). They decay at
+    persistence_y2plus every year after `year` — they're already past Y1.
+    """
     cohorts: dict[int, float] = {}
     annual_stock: dict[int, float] = {}
+    veteran_year, veteran_value = (None, 0.0)
+    if veteran_cohort is not None:
+        veteran_year, veteran_value = veteran_cohort
 
     for year in forecast_years:
         for start_year in list(cohorts.keys()):
@@ -152,8 +161,12 @@ def compute_treated_stock(
             elif years_since_start >= 2:
                 cohorts[start_year] *= persistence_y2plus
 
+        if veteran_year is not None and year > veteran_year:
+            veteran_value *= persistence_y2plus
+
         cohorts[year] = new_starts.get(year, 0.0)
-        annual_stock[year] = sum(cohorts.values())
+        veteran_contrib = veteran_value if (veteran_year is not None and year >= veteran_year) else 0.0
+        annual_stock[year] = sum(cohorts.values()) + veteran_contrib
 
     return annual_stock
 

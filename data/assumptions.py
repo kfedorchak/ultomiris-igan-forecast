@@ -11,6 +11,13 @@ of it via slider state.
 # See sources.py for full rationale.
 TARPEYO_MARKET_POTENTIAL_2022 = 27_000
 
+# Active patients on any targeted IgAN therapy at the start of Ultomiris launch
+# year (2027). Derived from issuer disclosures (Tarpeyo + Filspari + Fabhalta +
+# Vanrafia + Voyxact early ramps). Used to seed class-wide active stock in the
+# funnel so it doesn't artificially start from zero in 2027; does not affect
+# Ultomiris-specific new starts or share. See sources.py for derivation.
+CLASS_TREATED_AT_ULTOMIRIS_LAUNCH = 20_000
+
 
 DEFAULTS = {
     "epi": {
