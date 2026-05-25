@@ -19,7 +19,7 @@ def build_funnel_figure(
         "Diagnosed IgAN",
         "High-risk",
         "Addressable max (60% × high-risk)",
-        "On therapy (any IgAN drug)",
+        "On targeted IgAN therapy",
         "Ultomiris on therapy",
     ]
     values = [diagnosed_prevalent, high_risk, class_addressable, class_active, ultomiris_treated]
