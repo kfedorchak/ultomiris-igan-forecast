@@ -284,9 +284,13 @@ k6.metric(f"Cumulative revenue (through {max(forecast_years)})", fmt_currency(cu
 
 # ──────────────────────────── funnel ───────────────────────────────────
 
-st.subheader("Patient funnel")
 funnel_year = 2032 if 2032 in forecast else peak_year
-st.caption(f"Year {funnel_year}, {scenario_options[selected_scenario]}")
+_scenario_subtitle = {
+    "expected_value": "Risk-adjusted",
+    "strongly_positive": "Strongly positive eGFR",
+    "modestly_positive": "Modestly positive eGFR",
+    "weak_neutral": "Weak/neutral eGFR",
+}[selected_scenario]
 pool = compute_patient_pool(
     funnel_year,
     params["launch"]["forecast_start_year"],
@@ -305,6 +309,7 @@ st.plotly_chart(
         class_addressable,
         class_active_funnel,
         ultomiris_treated,
+        scenario_label=_scenario_subtitle,
     ),
     width="stretch",
 )

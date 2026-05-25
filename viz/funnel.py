@@ -12,17 +12,22 @@ def build_funnel_figure(
     class_addressable: float,
     class_active: float,
     ultomiris_treated: float,
+    scenario_label: str = "",
 ) -> go.Figure:
-    """Plotly Funnel: diagnosed -> high-risk -> class peak (long-run M) -> class active (this year) -> Ultomiris."""
+    """Plotly Funnel — all values at `year`. `scenario_label` renders as a subtitle under the chart title."""
     stages = [
         "Diagnosed IgAN",
         "High-risk",
-        "Treated (class peak)",
-        f"Treated (class active, {year})",
+        "Addressable max (60% × high-risk)",
+        "On therapy (any IgAN drug)",
         "Ultomiris on therapy",
     ]
     values = [diagnosed_prevalent, high_risk, class_addressable, class_active, ultomiris_treated]
     colors = ["#BDBDBD", "#9E9E9E", "#757575", "#616161", ULTOMIRIS_COLOR]
+
+    title = f"Patient Funnel — all values at {year}"
+    if scenario_label:
+        title += f"<br><span style='font-size:13px;color:#888'>{scenario_label}</span>"
 
     fig = go.Figure(
         go.Funnel(
@@ -33,9 +38,9 @@ def build_funnel_figure(
         )
     )
     fig.update_layout(
-        title=f"Patient Funnel — {year} (modestly-positive scenario)",
+        title=title,
         template="plotly_white",
-        height=350,
-        margin=dict(l=160, r=20, t=60, b=20),
+        height=360,
+        margin=dict(l=240, r=20, t=80, b=20),
     )
     return fig
