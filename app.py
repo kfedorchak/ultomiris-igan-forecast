@@ -20,6 +20,7 @@ from core.source_of_business import source_of_business_by_year
 from data.assumptions import CLASS_TREATED_AT_ULTOMIRIS_LAUNCH, DEFAULTS, TARPEYO_MARKET_POTENTIAL_2022
 from data.competitive_landscape import COMPETITOR_LAUNCH_YEARS, DRUG_ATTRIBUTES
 from viz.analog_overlay import build_analog_overlay
+from viz.conjoint_table import build_weights_chart, render_conjoint_table
 from viz.formatting import fmt_currency, fmt_patients
 from viz.funnel import build_funnel_figure
 from viz.revenue_chart import build_revenue_chart
@@ -390,9 +391,25 @@ with col_ana:
 # ──────────────────────────── competitive share ────────────────────────
 
 drug_stocks = cached_per_drug_stocks(phash, params, TARPEYO_MARKET_POTENTIAL_2022, selected_scenario)
-st.plotly_chart(
-    build_share_chart(forecast_years, drug_stocks, launch_years=COMPETITOR_LAUNCH_YEARS),
-    width="stretch",
+col_share, col_weights = st.columns(2)
+with col_share:
+    st.plotly_chart(
+        build_share_chart(forecast_years, drug_stocks, launch_years=COMPETITOR_LAUNCH_YEARS),
+        width="stretch",
+    )
+with col_weights:
+    st.plotly_chart(
+        build_weights_chart(params["conjoint"]["attribute_weights"]),
+        width="stretch",
+    )
+
+render_conjoint_table(2032, params, DRUG_ATTRIBUTES, COMPETITOR_LAUNCH_YEARS)
+st.caption(
+    "**How the conjoint drives Share of Treated Patients:** each drug's attribute scores "
+    "(table above, 1-10, higher = better) × the attribute importance weights (bar chart) → "
+    "utility → softmax → share of new starts → accumulating stock → share of treated patients. "
+    "Scores evolve year-over-year via asymptotic maturation on mechanism familiarity, safety, "
+    "and payer access; inactive drugs are hidden."
 )
 
 st.caption(

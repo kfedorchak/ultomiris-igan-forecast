@@ -52,7 +52,7 @@ def build_share_chart(
         yaxis_tickformat=".0%",
         template="plotly_white",
         height=440,
-        margin=dict(b=110),
+        margin=dict(t=60, b=110),
         legend=dict(orientation="h", yanchor="bottom", y=-0.4),
     )
     return fig
