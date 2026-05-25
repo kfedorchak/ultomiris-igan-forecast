@@ -228,14 +228,16 @@ peak_ev = peak_record.expected_value_revenue
 peak_treated_modest = max(
     yr.treated_patients_by_scenario["modestly_positive"] for yr in forecast.values()
 )
+cumulative_ev = sum(yr.expected_value_revenue for yr in forecast.values())
 launch_year = params["launch"]["us_launch_year"]
 
-k1, k2, k3, k4, k5 = st.columns(5)
+k1, k2, k3, k4, k5, k6 = st.columns(6)
 k1.metric("Launch year", str(launch_year))
 k2.metric("Peak year", str(peak_year))
 k3.metric("Years to peak", str(peak_year - launch_year))
 k4.metric("Peak treated (modest)", fmt_patients(peak_treated_modest))
 k5.metric("Peak EV revenue", fmt_currency(peak_ev))
+k6.metric("Cumulative EV revenue", fmt_currency(cumulative_ev))
 
 
 # ──────────────────────────── funnel ───────────────────────────────────
