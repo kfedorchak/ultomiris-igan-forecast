@@ -1,28 +1,10 @@
-# Ultomiris IgAN Forecast Prototype
+# Ultomiris IgAN Forecast — Interactive Prototype
 
-Interactive patient-based revenue forecast for Ultomiris (ravulizumab) in IgA nephropathy (IgAN) in the United States. Built around the I CAN Phase III trial's week 106 eGFR readout as one of three scenario dimensions, with mechanism-based source-of-business switching and Tarpeyo-calibrated Bass diffusion against a stable class-wide market potential.
+Patient-based US revenue forecast for Ultomiris (ravulizumab) in IgA nephropathy (IgAN), built as a portfolio prototype. The model combines disease epidemiology, Bass diffusion calibrated against real Calliditas-disclosed Tarpeyo uptake, conjoint-based share allocation across an 11-drug competitive set, and a phased I CAN Phase III eGFR-readout scenario tree.
 
-## Installation
+**Live app:** [link added once deployed]
 
-```bash
-pip install -r requirements.txt
-```
-
-Python 3.11+ recommended.
-
-## Run
-
-```bash
-streamlit run app.py
-```
-
-## Test
-
-```bash
-pytest tests/
-```
-
-## Architecture
+## What the model does
 
 ```
 Patient Flow ─→ Bass Diffusion ─→ Conjoint Share ─→ Revenue
@@ -32,27 +14,60 @@ Patient Flow ─→ Bass Diffusion ─→ Conjoint Share ─→ Revenue
  Expansion                       Drug Scores      × Net price
                                                   × PoA (0.88)
                                                   × eGFR scenario
-                                                  (post-readout)
+                                                  (phased 2027/28)
 ```
 
-Bass models the full IgAN treated market against a stable `total_M = high_risk × market_potential_fraction`. The conjoint share then allocates each year's new starts to Ultomiris. eGFR scenario multipliers act on Ultomiris share only from the readout year (2029) onward.
+Bass models the full IgAN treated market against a stable `total_M = high_risk × market_potential_fraction`, calibrated against 10 quarters of Calliditas-disclosed Tarpeyo US revenue (Q1 2022 – Q2 2024). The conjoint share then allocates each year's new starts to Ultomiris vs 10 competitors across 7 weighted attributes (proteinuria, eGFR, route, dosing, safety, familiarity, payer). eGFR scenario multipliers act on Ultomiris share with a 2027 signal-year partial impact and full impact from the 2028 readout onward.
 
-## Where assumptions live
+## Reading the dashboard
 
-- `data/assumptions.py` — all default parameters (epi, Bass, conjoint, persistence, pricing, eGFR scenarios, launch timing)
-- `data/competitive_landscape.py` — 8 competitor launch years and drug attribute scores
-- `data/sources.py` — citation dictionary keyed by assumption
-- `data/tarpeyo_trajectory.csv` — quarterly Tarpeyo trajectory used to calibrate Bass `(p, q)`
+The default view is **Risk-adjusted (EV)** — a probability-weighted expected value across the three eGFR scenarios (40% strongly positive / 40% modestly positive / 20% weak-neutral), with revenues multiplied by a 0.88 probability of approval.
 
-## REVIEW BEFORE FINAL USE
+The sidebar exposes the six most decision-relevant drivers; the tornado quantifies single-driver sensitivity around the central case. The conjoint table and weights chart make the share-allocation logic fully transparent. Click any drug in the Source-of-Business or Share-of-Treated pills to highlight that drug's trajectory.
 
-The following defaults are placeholders pending Kyle's judgment (spec Section 13):
+For modeling detail, click **Methodology** and **Data sources** in the app header — both render the full markdown specs inline.
 
-- `data/tarpeyo_trajectory.csv` — placeholder S-curve. Replace with actuals from Calliditas 10-Qs (pre-Sep 2024) and Asahi Kasei pharma segment reports (post-Sep 2024).
-- `data/assumptions.py` `conjoint.attribute_weights` — Kyle's prioritization judgment.
-- `data/competitive_landscape.py` `DRUG_ATTRIBUTES` — Kyle's read of clinical and commercial data (note: Voyxact and Vanrafia scores reflect v2 additions/adjustments — review against ALIGN, APPLAUSE-IgAN, and sibeprenlimab data).
-- `data/assumptions.py` `egfr_readout_scenarios` — probability split (40/40/20) and share multipliers (1.18/1.00/0.78) are moderated v2 values based on class-characteristic evidence.
+## Modeling choices worth flagging
 
-## Data sources
+- **Bass on stable class-wide M, not per-drug M.** Prevents negative new starts when competitors launch — share allocation happens downstream, on a class total that doesn't shift with the competitive set.
+- **Real Tarpeyo calibration, not synthetic.** `(p, q)` fitted against Calliditas SEC + investor releases; q bound widened to 2.0 because observed specialty-launch imitation exceeded the standard Sultan-Farley-Lehmann range.
+- **Phased eGFR impact.** Signal year (2027, partial strength 0.5) reflects prescriber anticipation from the I CAN wk 34 interim; readout year (2028, full impact) is timed off LPLV, not approval date.
+- **PoA applied to revenues only.** Patient counts shown are conditional on approval; revenues include the 0.88 PoA multiplier throughout.
 
-See `docs/data_sources.md` for full source list with URLs.
+## Run locally
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+pytest tests/
+```
+
+Python 3.11+ recommended. 65/65 tests pass.
+
+## Repository layout
+
+```
+app.py                          Streamlit entry point
+core/
+  bass_model.py                 (p, q, M) Bass fit + projection
+  conjoint.py                   7-attribute softmax share allocation
+  patient_flow.py               Disease epi + stock-and-flow patient years
+  revenue.py                    Forecast orchestrator
+  source_of_business.py         5-bucket SoB mix interpolation
+data/
+  assumptions.py                DEFAULTS dict — all sliders default here
+  competitive_landscape.py      11-drug landscape + launch years + attribute scores
+  sources.py                    Programmatic citation dictionary
+  tarpeyo_trajectory.csv        10 quarters of Calliditas-disclosed revenue
+viz/                            Plotly chart builders + formatting
+docs/
+  methodology.md                Full model methodology (also accessible from app)
+  data_sources.md               Per-assumption sourcing with URLs
+tests/                          65 tests across all layers
+```
+
+## Sources
+
+All assumptions cite to public material: KDIGO 2021/2024 guidelines, AstraZeneca I CAN trial registry materials, Calliditas SEC filings + PR Newswire interim reports, drug labels (Tarpeyo / Filspari / Fabhalta / Vanrafia), and published analyst commentary. See `docs/data_sources.md` for the full per-assumption source list.
+
+No proprietary or confidential data is used.
