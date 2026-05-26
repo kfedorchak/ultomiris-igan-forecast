@@ -12,18 +12,22 @@ of it via slider state.
 TARPEYO_MARKET_POTENTIAL_2022 = 27_000
 
 # Active patients per drug at the start of Ultomiris launch year (2027).
-# Derived from issuer disclosures: Tarpeyo ~7.5K end-2024 (Asahi Kasei) growing
-# to ~10K by end-2026 with continued KOL adoption; Filspari ~4.5K end-2024
-# (Travere) growing to ~5K; Fabhalta ~2K end-2024 (Novartis early launch)
-# growing to ~3K; Vanrafia/Voyxact 2025 launches; Atacicept 2026 launch.
-# Total sums to CLASS_TREATED_AT_ULTOMIRIS_LAUNCH = 20,000.
+# Reflects 2 years of continued growth past the end-2024 issuer disclosures
+# (Tarpeyo ~7.5K end-2024 -> ~13K end-2026; Filspari ~4.5K -> ~8K; Fabhalta
+# ~2K -> ~5K). Vanrafia (2025 launch) ramps to ~1.5K. Voyxact/Atacicept
+# (2026 launches) at ~500 each by end-2026. Cemdisiran+pozelimab,
+# Telitacicept, and Pegcetacoplan launch 2028 → 0 veterans at start-2027.
 DRUG_VETERAN_COHORTS_2027: dict[str, float] = {
-    "tarpeyo": 10_000,
-    "filspari": 5_000,
-    "fabhalta": 3_000,
-    "vanrafia": 1_000,
-    "voyxact": 500,
-    "atacicept": 500,
+    "tarpeyo":      13_000,
+    "filspari":      8_000,
+    "fabhalta":      5_000,
+    "vanrafia":      1_500,
+    "voyxact":         500,
+    "atacicept":       500,
+    "povetacicept":      0,    # launches 2027, no veteran
+    "cemdisiran":        0,    # launches 2028
+    "telitacicept":      0,    # launches 2028
+    "pegcetacoplan":     0,    # launches 2028
 }
 
 # Sum of per-drug veteran cohorts. Used to seed class-wide active stock in the

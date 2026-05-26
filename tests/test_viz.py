@@ -22,22 +22,25 @@ def test_conjoint_table_renders_at_default_year():
     assert isinstance(df, pd.DataFrame)
     assert "Utility" in df.columns
     assert "Share" in df.columns
-    assert len(df) == 8                              # all 8 drugs active by 2032
+    # All 11 drugs are active by 2032 (Tarpeyo through Pegcetacoplan).
+    assert len(df) == len(COMPETITOR_LAUNCH_YEARS)
     assert len(attr_keys) == 7                       # 7 attribute columns
     assert all(k in df.columns for k in attr_keys)
 
 
 def test_only_active_drugs_shown_at_2025():
-    """At 2025, the table excludes Atacicept (2026), Povetacicept (2027), and Ultomiris (2027)."""
+    """At 2025, the table excludes drugs that haven't launched yet."""
     df, _, _ = compute_conjoint_table_data(
         2025, DEFAULTS, DRUG_ATTRIBUTES, COMPETITOR_LAUNCH_YEARS
     )
     drug_names = {d.lower() for d in df.index}
-    assert "atacicept" not in drug_names
-    assert "povetacicept" not in drug_names
-    assert "ultomiris" not in drug_names
-    # The five launched by 2025: tarpeyo, filspari, fabhalta, vanrafia, voyxact
-    assert drug_names == {"tarpeyo", "filspari", "fabhalta", "vanrafia", "voyxact"}
+    # Drugs launched by 2025: tarpeyo (2022), filspari (2023), fabhalta (2024), vanrafia (2025).
+    # Voyxact moved to 2026 launch; Atacicept (2026), Povetacicept/Ultomiris (2027),
+    # Cemdisiran/Telitacicept/Pegcetacoplan (2028) all excluded.
+    assert drug_names == {"tarpeyo", "filspari", "fabhalta", "vanrafia"}
+    for excluded in ("voyxact", "atacicept", "povetacicept", "ultomiris",
+                     "cemdisiran", "telitacicept", "pegcetacoplan"):
+        assert excluded not in drug_names
 
 
 def test_utility_calculation_matches_internal():

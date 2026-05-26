@@ -207,12 +207,12 @@ def _build_source_of_business_chart(
         xaxis=dict(title="Year", tickmode="linear", dtick=1),
         yaxis=dict(title="Share of new starts", tickformat=".0%", range=[0, 1]),
         template="plotly_white",
-        height=440,
-        margin=dict(b=110),
+        height=480,
+        margin=dict(t=60, b=110),
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.4,
+            y=-0.35,
             itemclick="toggleothers",     # click a bucket to isolate it
             itemdoubleclick="toggle",     # double-click to restore all
         ),
@@ -437,6 +437,14 @@ drug_stocks = cached_per_drug_stocks(phash, params, TARPEYO_MARKET_POTENTIAL_202
 
 col_sob, col_share = st.columns(2)
 with col_sob:
+    # Spacer matches the extra row of Share-of-Treated pills (12 options
+    # wrap to 2 rows; SoB has 6 options on 1 row). Keeps chart titles aligned
+    # vertically between the two columns now that the plotly top margins
+    # match (t=60 on both).
+    st.markdown(
+        "<div style='height: 34px; margin: 0; padding: 0;'>&nbsp;</div>",
+        unsafe_allow_html=True,
+    )
     _selected_pill = st.pills(
         "Highlight a source",
         options=list(_SOB_PILL_TO_KEY.keys()),

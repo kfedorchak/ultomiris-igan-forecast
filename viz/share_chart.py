@@ -58,12 +58,12 @@ def build_share_chart(
         yaxis_title="Share",
         yaxis_tickformat=".0%",
         template="plotly_white",
-        height=440,
+        height=480,
         margin=dict(t=60, b=110),
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.4,
+            y=-0.35,
             itemclick="toggleothers",     # click a drug to isolate it
             itemdoubleclick="toggle",     # double-click to restore all
         ),

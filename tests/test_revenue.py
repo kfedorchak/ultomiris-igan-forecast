@@ -101,25 +101,24 @@ def test_pre_signal_year_no_scenario_impact(bass_fit, forecast_years):
     assert all(v == pytest.approx(vals[0]) for v in vals)
 
 
-def test_signal_year_partial_impact(bass_fit, forecast_years):
-    """At signal year (2027), Ultomiris share-of-new-starts diff (strong − weak) ≈ 50% of the readout year diff."""
-    from core.revenue import compute_class_new_starts_per_year
+def test_signal_year_partial_impact():
+    """Signal-year scenario multiplier delta is exactly half the readout-year delta (partial-strength=0.5)."""
+    from core.revenue import get_scenario_multiplier
 
-    p_fit, q_fit = bass_fit
-    class_new = compute_class_new_starts_per_year(forecast_years, DEFAULTS, p_fit, q_fit)
-    strong = compute_new_starts_per_year(forecast_years, "strongly_positive", DEFAULTS, p_fit, q_fit)["ultomiris"]
-    weak = compute_new_starts_per_year(forecast_years, "weak_neutral", DEFAULTS, p_fit, q_fit)["ultomiris"]
+    launch = DEFAULTS["launch"]
+    strong = DEFAULTS["egfr_readout_scenarios"]["strongly_positive"]
+    weak = DEFAULTS["egfr_readout_scenarios"]["weak_neutral"]
 
-    signal_year = DEFAULTS["launch"]["egfr_signal_year"]
-    readout_year = DEFAULTS["launch"]["egfr_readout_year"]
+    signal_strong = get_scenario_multiplier(launch["egfr_signal_year"], strong, launch)
+    signal_weak = get_scenario_multiplier(launch["egfr_signal_year"], weak, launch)
+    readout_strong = get_scenario_multiplier(launch["egfr_readout_year"], strong, launch)
+    readout_weak = get_scenario_multiplier(launch["egfr_readout_year"], weak, launch)
 
-    diff_signal_share = (strong[signal_year] - weak[signal_year]) / class_new[signal_year]
-    diff_readout_share = (strong[readout_year] - weak[readout_year]) / class_new[readout_year]
-
-    assert diff_signal_share > 0
-    assert diff_readout_share > 0
-    ratio = diff_signal_share / diff_readout_share
-    assert 0.40 < ratio < 0.60, f"signal/readout share-diff ratio: {ratio:.3f} (expected ~0.5)"
+    signal_delta = signal_strong - signal_weak
+    readout_delta = readout_strong - readout_weak
+    # Signal-year delta should equal partial_strength × readout-year delta (default 0.5)
+    expected_ratio = launch["egfr_signal_partial_strength"]
+    assert signal_delta / readout_delta == pytest.approx(expected_ratio)
 
 
 def test_readout_year_full_impact(bass_fit, forecast_years):

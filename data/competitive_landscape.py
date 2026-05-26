@@ -10,10 +10,13 @@ COMPETITOR_LAUNCH_YEARS = {
     "filspari": 2023,
     "fabhalta": 2024,
     "vanrafia": 2025,
-    "voyxact": 2025,            # sibeprenlimab; Otsuka; first-in-class APRIL inhibitor
+    "voyxact": 2026,            # sibeprenlimab; Otsuka; Phase 3 readout 2025, approval late-2026/early-2027
     "atacicept": 2026,
     "povetacicept": 2027,
     "ultomiris": 2027,
+    "cemdisiran": 2028,         # cemdisiran (Alnylam) + pozelimab (Regeneron) anti-C5 combination
+    "telitacicept": 2028,       # RemeGen APRIL/BAFF dual; US Phase 3 ongoing
+    "pegcetacoplan": 2028,      # Apellis C3 complement; Phase 3 VALIANT in IgAN
 }
 
 DRUG_ATTRIBUTES = {
@@ -69,5 +72,26 @@ DRUG_ATTRIBUTES = {
         # Less data maturity than Voyxact, less program history than Atacicept.
         "proteinuria_efficacy": 7, "egfr_preservation": 6, "route_of_admin": 7,
         "dosing_frequency": 7, "safety_burden": 6, "mechanism_familiarity": 5, "payer_access": 6,
+    },
+    "cemdisiran": {
+        # Cemdisiran (Alnylam siRNA) + pozelimab (Regeneron mAb) anti-C5
+        # combination. Direct Ultomiris competitor on mechanism. Expected SC
+        # quarterly dosing — strictly more convenient than Ultomiris's IV q8w.
+        "proteinuria_efficacy": 8, "egfr_preservation": 7, "route_of_admin": 7,
+        "dosing_frequency": 8, "safety_burden": 5, "mechanism_familiarity": 6, "payer_access": 5,
+    },
+    "telitacicept": {
+        # RemeGen telitacicept; APRIL/BAFF dual (same class as atacicept).
+        # Already approved in China for lupus, so some familiarity carryover.
+        # SC weekly dosing.
+        "proteinuria_efficacy": 7, "egfr_preservation": 6, "route_of_admin": 7,
+        "dosing_frequency": 6, "safety_burden": 6, "mechanism_familiarity": 6, "payer_access": 6,
+    },
+    "pegcetacoplan": {
+        # Apellis pegcetacoplan; C3 complement inhibitor (distinct mechanism
+        # from C5). Already approved for PNH and C3G. SC twice-weekly dosing
+        # for the IgAN indication (carries REMS-equivalent infection risk).
+        "proteinuria_efficacy": 7, "egfr_preservation": 6, "route_of_admin": 6,
+        "dosing_frequency": 5, "safety_burden": 5, "mechanism_familiarity": 6, "payer_access": 5,
     },
 }

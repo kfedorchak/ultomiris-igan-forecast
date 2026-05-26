@@ -34,15 +34,19 @@ SCENARIO_COLORS: dict[str, str] = {
 # ──────────────────────────── competitive palette ──────────────
 # Sequential greys from oldest-launched (lightest) to newest competitor
 # (darkest), with Ultomiris in Alexion blue. Ordering matches launch year.
+# 10-step grey ramp from #CC down to #33 (10 non-Ultomiris drugs).
 COMPETITOR_PALETTE: dict[str, str] = {
-    "tarpeyo":      "#BFBFBF",
-    "filspari":     "#A6A6A6",
-    "fabhalta":     "#8C8C8C",
-    "vanrafia":     "#737373",
-    "voyxact":      "#595959",
-    "atacicept":    "#404040",
-    "povetacicept": "#2A2A2A",
-    "ultomiris":    ALEXION_BLUE,
+    "tarpeyo":       "#CCCCCC",
+    "filspari":      "#BBBBBB",
+    "fabhalta":      "#AAAAAA",
+    "vanrafia":      "#999999",
+    "voyxact":       "#888888",
+    "atacicept":     "#777777",
+    "povetacicept":  "#666666",
+    "ultomiris":     ALEXION_BLUE,
+    "cemdisiran":    "#555555",
+    "telitacicept":  "#444444",
+    "pegcetacoplan": "#333333",
 }
 
 
