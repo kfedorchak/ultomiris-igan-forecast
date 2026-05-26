@@ -105,7 +105,12 @@ def render_conjoint_table(
     yr_max = forecast_start + horizon - 1
     default_year = year if yr_min <= year <= yr_max else (yr_min + yr_max) // 2
 
-    st.markdown("**Drug × attribute scores at the selected year**")
+    st.markdown(
+        "<div style='font-size: 17px; font-weight: 500; margin-bottom: 0.5rem;'>"
+        "Drug × attribute scores at the selected year"
+        "</div>",
+        unsafe_allow_html=True,
+    )
     selected_year = st.slider(
         "Year",
         min_value=yr_min,
