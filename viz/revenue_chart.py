@@ -1,9 +1,11 @@
 """Multi-scenario revenue forecast chart with selectable scenario highlighting."""
 
+import math
+
 import plotly.graph_objects as go
 
 from core.revenue import YearlyRevenue
-from viz.formatting import SCENARIO_COLORS, ULTOMIRIS_COLOR
+from viz.formatting import SCENARIO_COLORS, ULTOMIRIS_COLOR, fmt_currency
 
 
 SCENARIO_LABELS = {
@@ -48,10 +50,37 @@ def build_revenue_chart(
         )
     )
 
+    # Explicit y-axis ticks using fmt_currency so billions render as "B"
+    # (Plotly's "$.2s" SI format uses "G" for giga). Step picked from peak
+    # value in the chart's data.
+    all_revs = []
+    for y in years:
+        all_revs.extend(forecast[y].revenues_by_scenario.values())
+        all_revs.append(forecast[y].expected_value_revenue)
+    max_rev = max(all_revs) if all_revs else 1e9
+    if max_rev >= 2e9:
+        step = 5e8
+    elif max_rev >= 1e9:
+        step = 2.5e8
+    elif max_rev >= 4e8:
+        step = 1e8
+    elif max_rev >= 1e8:
+        step = 5e7
+    else:
+        step = 2.5e7
+    n_ticks = math.ceil(max_rev / step) + 1
+    tickvals = [i * step for i in range(n_ticks + 1)]
+    ticktext = [fmt_currency(v) for v in tickvals]
+
     fig.update_layout(
         title="US Net Revenue Forecast",
         xaxis=dict(title="Year", tickmode="linear", dtick=1),
-        yaxis=dict(title="Net revenue (USD)", tickformat="$.2s"),
+        yaxis=dict(
+            title="Net revenue (USD)",
+            tickmode="array",
+            tickvals=tickvals,
+            ticktext=ticktext,
+        ),
         template="plotly_white",
         height=440,
         margin=dict(b=110),

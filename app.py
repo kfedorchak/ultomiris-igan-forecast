@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import json
+from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -245,10 +246,33 @@ for _k, _v in SLIDER_DEFAULTS.items():
         st.session_state[_k] = _v
 
 
+# ──────────────────────────── doc dialogs (modal popups) ──────────────
+
+@st.dialog("Methodology", width="large")
+def _show_methodology_dialog():
+    st.markdown(Path("docs/methodology.md").read_text())
+
+
+@st.dialog("Data sources", width="large")
+def _show_data_sources_dialog():
+    st.markdown(Path("docs/data_sources.md").read_text())
+
+
 # ──────────────────────────── header ────────────────────────────────────
 
-st.title("Ultomiris in IgAN — US Patient-Based Revenue Forecast")
-st.caption("Prototype for Alexion / AstraZeneca · Director, Commercial Insights & Analytics")
+_title_col, _btn_method_col, _btn_sources_col = st.columns([6, 1, 1])
+with _title_col:
+    st.title("Ultomiris in IgAN — US Patient-Based Revenue Forecast")
+    st.caption("Prototype for Alexion / AstraZeneca · Director, Commercial Insights & Analytics")
+with _btn_method_col:
+    # Vertical spacer to align button baseline with the H1 title baseline.
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    if st.button("Methodology", width="stretch", key="open_methodology"):
+        _show_methodology_dialog()
+with _btn_sources_col:
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    if st.button("Data sources", width="stretch", key="open_sources"):
+        _show_data_sources_dialog()
 
 
 # ──────────────────────────── sidebar ───────────────────────────────────
@@ -314,21 +338,27 @@ with st.sidebar:
     with st.expander("Methodology"):
         st.markdown(
             """
-**Bass diffusion** is calibrated to Tarpeyo's 2022-2025 trajectory; Ultomiris
-adoption uses the fitted `(p, q)` with `p × IV/REMS friction` applied to model
-slower class-wide ramp.
+**Default view (Risk-adjusted)** is a probability-weighted expected value
+across three eGFR-readout scenarios (40% strong / 40% modest / 20% weak),
+each with phased impact from the **2027** wk-106 signal year through the
+**2028** LPLV-based readout.
 
-**Conjoint share** is a softmax over 7 weighted attributes across 8 active
-competitors. eGFR readout scenarios phase in: partial impact from **2027**
-(signal year — first-cohort wk 106, prescriber anticipation builds) and full
-impact from **2028** (LPLV-based topline analysis) onward.
+**Bass diffusion** calibrated against 10 quarters of real Calliditas-disclosed
+Tarpeyo US revenue (Q1 2022 – Q2 2024). Ultomiris adoption uses the fitted
+`(p, q)` with `p × IV/REMS friction` for the slower class-wide ramp.
+
+**Conjoint share** is a softmax over 7 weighted attributes across 11
+competitors. Sidebar sliders govern *volume* (pool, adoption rate,
+persistence); the conjoint governs *share* (which drug each new patient
+receives).
 
 **Stock-and-flow** with cohort persistence: each year's new-starts cohort
-ages by `Y1` then `Y2+` retention every year thereafter. Revenue =
-treated stock × net price × probability of approval (**0.88**).
+ages by `Y1` then `Y2+`. Revenue = stock × net price × PoA (**0.88**).
+Pre-launch class stock is seeded from end-2024 issuer disclosures grown
+to ~28.5K by end-2026.
 
-See `docs/methodology.md` for the full write-up and `data/sources.py` for
-per-assumption citations.
+Open the full **Methodology** and **Data sources** documents from the
+links at the top of the page.
             """
         )
 

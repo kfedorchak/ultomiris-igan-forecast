@@ -36,11 +36,11 @@ Entries here include URLs and reading notes.
   - [Q2 2023 interim](https://www.prnewswire.com/news-releases/interim-report-q2-2023-calliditas-therapeutics-301903279.html) — $24.7M
   - [Q3 2023 interim](https://www.prnewswire.com/news-releases/calliditas-interim-report-january--september-2023-301979524.html) — $26.3M
   - [Q4 2023 preliminary](https://www.prnewswire.com/news-releases/calliditas-therapeutics-provides-business-update-ahead-of-jp-morgan-conference-302028169.html) and [FY2023 release](https://www.prnewswire.com/news-releases/calliditas-year-end-report-january--december-2023-302066986.html) — $32.8M (SEK 347.3M ÷ ~10.6)
-  - [Q1 2024 interim](https://www.prnewswire.com/news-releases/calliditas-q1-report-january--march-2024-302153828.html) — $26.6M (carried ~$4.7M Change Healthcare cyberattack GTN drag)
+  - [Q1 2024 interim](https://www.prnewswire.com/news-releases/calliditas-q1-report-january--march-2024-302153828.html) — \$26.6M (carried ~\$4.7M Change Healthcare cyberattack GTN drag)
   - [Q2 2024 interim](https://www.prnewswire.com/news-releases/calliditas-interim-report-january-to-june-2024-302220664.html) — $46.3M (record quarter, +90% YoY)
 - **Patient conversion**: `estimated_patients = revenue_musd × 1e6 / 15000`, where
-  $15K is the midpoint of Tarpeyo's annual WAC range ($14.5K at 2022 launch, raised to
-  ~$16K by 2024).
+  \$15K is the midpoint of Tarpeyo's annual WAC range (\$14.5K at 2022 launch, raised to
+  ~\$16K by 2024).
 - **Post-Sep-2024 omitted**: Calliditas was acquired by Asahi Kasei (close Sep 4 2024,
   delist Oct 10 2024). No standalone Calliditas Q3 2024 interim was filed. Subsequent
   Asahi Kasei pharma-segment disclosures don't break out Tarpeyo at a quarterly USD
@@ -60,18 +60,19 @@ Entries here include URLs and reading notes.
 ## Competitive landscape
 
 - **Drug attributes**: Composite of trial readouts (proteinuria, eGFR), label features
-  (route, dosing, REMS), and analyst commentary on payer positioning. Specific
-  citations:
-  - [KDIGO 2024 IgAN guideline update](https://kdigo.org/guidelines/gn/) — drives the
-    weighted-attribute framework.
-  - [Tarpeyo NefIgArd 2-yr eGFR data](https://www.calliditas.com/) — supports the
-    eGFR=7 score for Tarpeyo (Dec 2023 full FDA approval).
-  - [Filspari (sparsentan) label](https://www.travere.com/our-medicines/filspari/) —
-    documents REMS for hepatotoxicity and teratogenicity (drives safety=5 score).
-  - [Fabhalta (iptacopan) label](https://www.novartis.com/news/media-releases/novartis-fabhalta-iptacopan-receives-fda-accelerated-approval-iga-nephropathy-igan-rare-and-serious-progressive-kidney-disease) — BID dosing supports dosing_frequency=4.
-  - [Vanrafia (atrasentan) ALIGN miss](https://www.fiercepharma.com/pharma/novartis-vanrafia-iga-nephropathy-fda-accelerated-approval-align-egfr-miss) — drives eGFR=5.
-  - [Voyxact (sibeprenlimab) VISIONARY](https://www.otsuka.co.jp/en/) — Phase 3
-    sibeprenlimab supports efficacy=8 and familiarity=6.
+  (route, dosing, REMS), and analyst commentary on payer positioning. References:
+  - **KDIGO 2024 IgAN guideline update** — drives the weighted-attribute framework
+    (proteinuria primary endpoint, eGFR slope as hard endpoint).
+  - **Tarpeyo NefIgArd 2-yr eGFR data** — Calliditas readout supporting the December
+    2023 full FDA approval; eGFR slope benefit drives Tarpeyo's eGFR=7 score.
+  - **Filspari (sparsentan) USPI** — Travere label documents REMS for hepatotoxicity
+    and teratogenicity (drives safety=5 score).
+  - **Fabhalta (iptacopan) USPI** — Novartis label; BID dosing supports
+    dosing_frequency=4.
+  - **Vanrafia (atrasentan) ALIGN trial** — Novartis Phase 3 missed primary eGFR
+    endpoint; FDA still granted accelerated approval. Drives eGFR=5 score.
+  - **Voyxact (sibeprenlimab) VISIONARY trial** — Otsuka/Visterra Phase 3 readout
+    supports efficacy=8 and familiarity=6 scores.
 - **Launch years**: best public-disclosure estimates as of mid-2026; see
   `data/competitive_landscape.py` `COMPETITOR_LAUNCH_YEARS` for the table.
 - **Drug veteran cohorts (sum = 28,500 at end-2026)**: Issuer-disclosed end-2024 counts
@@ -114,10 +115,10 @@ Entries here include URLs and reading notes.
 
 ## Source-of-business mix
 
-- **Anchor mixes (`EARLY_MIX`, `MATURE_MIX`)**: Kyle's prioritization judgment, anchored
-  to mechanism-class share-of-prescribing patterns observed in early-Tarpeyo-era and
-  projected post-eGFR-readout mature class environments. Linear interpolation over
-  8 years post-Ultomiris launch.
+- **Anchor mixes (`EARLY_MIX`, `MATURE_MIX`)**: anchored to mechanism-class
+  share-of-prescribing patterns observed in the early-Tarpeyo-era and projected
+  post-eGFR-readout mature-class environments. Linear interpolation over 8 years
+  post-Ultomiris launch.
 
 ## Files cross-reference
 

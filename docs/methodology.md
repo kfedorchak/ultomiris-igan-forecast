@@ -345,3 +345,89 @@ plausibility.
 - **Patient pool dynamics**: linear net flow on a compounding diagnostic base. Real
   epidemiology is more complex (age-dependent incidence, ESKD progression conditional
   on therapy class, etc.) but well-scoped for a 10-year forecast.
+
+## Future improvements
+
+The v2 prototype covers the strategic-decision questions (peak revenue, scenario
+sensitivity, share dynamics, source-of-business attribution) but several substantive
+refinements would strengthen accuracy, defensibility, and granularity. Grouped by area:
+
+**Model structure**
+
+- **Multi-state Markov transition framework** for inter-drug switching. Each drug
+  becomes a state with a transition probability matrix; would unify the SoB attribution
+  and stock-derived shares into a single internally consistent model. See *Scope of
+  Patient-Flow Modeling* above for the trade-offs.
+- **Semi-Markov / patient-level discrete-event simulation**. Track individual patients
+  through diagnosis → eligibility → therapy choice → persistence → discontinuation
+  rather than aggregate stock-and-flow. Enables time-on-therapy distributions, response-
+  dependent switching, and individual-level scenario analysis at the cost of
+  computational complexity and parameter calibration burden.
+- **Sigmoid (logistic) transitions** for source-of-business mix and attribute
+  maturation, replacing linear interpolation. Captures empirical S-curve learning
+  dynamics if observed.
+- **Time-value discounting (rNPV)**. Add a discount-rate parameter and produce
+  risk-adjusted NPV alongside the current cumulative-EV figure. Standard for asset-
+  valuation conversations.
+
+**Data and calibration**
+
+- **Multi-drug Bass calibration**. Currently calibrated on Tarpeyo alone (the cleanest
+  first-mover trajectory). A class-wide Bass fit using Tarpeyo + Filspari + Fabhalta
+  combined adoption would capture imitation dynamics across the class and reduce
+  dependence on a single drug's commercial idiosyncrasies (e.g. the Q1 2024 Change
+  Healthcare cyberattack drag).
+- **AZ-specific internal data**. The current model uses public-domain inputs only.
+  Integrating AZ's internal sources — Ultomiris franchise commercial intelligence,
+  proprietary payer-access data, longitudinal IgAN patient claims, KOL advisory boards
+  — would tighten veteran cohorts, persistence assumptions, payer-access scoring, and
+  source-of-business mixes.
+- **Primary KOL research to tune conjoint inputs**. Current attribute weights and drug
+  scores are derived from published trial readouts, labels, and analyst commentary.
+  A structured conjoint exercise with nephrologist KOLs (or a max-diff / best-worst
+  scaling survey) would replace these heuristic inputs with empirically-elicited
+  prescriber preferences.
+- **Real-world evidence (RWE) integration**. Once Ultomiris launches, recalibrate
+  Bass parameters and persistence assumptions against observed claims data (Symphony,
+  IQVIA, Komodo) instead of pure forecasting.
+- **Scenario-dependent PoA**. Currently a uniform 0.88 across all eGFR scenarios. A
+  weak/neutral eGFR readout has different full-approval-conversion probability than a
+  strongly positive readout; could be modeled per-scenario.
+- **Calibrated `egfr_signal_partial_strength`**. The 0.5 midpoint heuristic for
+  signal-year impact could be tuned to historical prescriber-anticipation patterns
+  around comparable trial readouts.
+
+**Scope expansion**
+
+- **EU / Japan / RoW geographies**. Current model is US-only. AZ I CAN is a global
+  trial; the launch will be multi-geography. Each geography has distinct epi, payer
+  dynamics, and competitive landscape.
+- **Combination targeted therapy modeling**. Currently excluded based on KDIGO 2024
+  sequential-escalation guidance and payer-access limitations (see *Combination
+  Targeted Therapy Not Modeled*). If real-world prescribing patterns evolve toward
+  combination use, the model would need an explicit combination state.
+- **Indication-level cannibalization**. Ultomiris is already approved for PNH, aHUS,
+  and gMG. IgAN adoption may cannibalize internal commercial bandwidth, manufacturing
+  capacity, and payer goodwill across indications. Currently treated as independent
+  but could be modeled jointly.
+- **Detailed payer access modeling**. The current `payer_access` attribute is a single
+  1-10 score per drug. Could decompose into formulary tier, prior-auth criteria, step
+  edits, copay-assistance utilization, and Medicare/commercial mix — each of which
+  affects Ultomiris's effective rate of conversion from prescribed-to-paid.
+- **Operational / launch-execution drivers**. Currently abstract drivers like "IV/REMS
+  friction" capture launch-execution headwinds. Could be decomposed into infusion-site
+  capacity, REMS enrollment friction, sales-force coverage, and other ground-truth
+  commercial-execution variables.
+
+**Validation and refinement**
+
+- **Out-of-sample backtesting**. Hold out the Q1-Q2 2024 Tarpeyo data, fit Bass on
+  Q1 2022 – Q4 2023, and verify the forecast matches the held-out quarters. Quantifies
+  model fit confidence.
+- **Cross-validation against analyst consensus**. Compare peak EV ($728M) and trajectory
+  shape to Wall Street IgAN forecasts (Jefferies, Cantor, Leerink, BMO). Material gaps
+  flag either model assumptions or analyst optimism/pessimism worth investigating.
+- **Sensitivity to attribute scoring uncertainty**. Currently the tornado covers six
+  numeric drivers but doesn't perturb the drug attribute scores themselves. A
+  share-allocation sensitivity layer (e.g., ±1 point on each Ultomiris attribute)
+  would quantify how much the conjoint-share output depends on scoring judgment.
