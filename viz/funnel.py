@@ -2,7 +2,7 @@
 
 import plotly.graph_objects as go
 
-from viz.formatting import ULTOMIRIS_COLOR
+from viz.formatting import TITLE_COLOR, ULTOMIRIS_COLOR
 
 
 def build_funnel_figure(
@@ -41,7 +41,7 @@ def build_funnel_figure(
         )
     )
     fig.update_layout(
-        title=title,
+        title=dict(text=title, font=dict(color=TITLE_COLOR)),
         template="plotly_white",
         height=360,
         margin=dict(l=240, r=20, t=80, b=20),

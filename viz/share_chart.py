@@ -2,7 +2,7 @@
 
 import plotly.graph_objects as go
 
-from viz.formatting import ALEXION_BLUE, COMPETITOR_PALETTE
+from viz.formatting import ALEXION_BLUE, COMPETITOR_PALETTE, TITLE_COLOR
 
 
 def build_share_chart(
@@ -53,7 +53,7 @@ def build_share_chart(
         )
 
     fig.update_layout(
-        title="Share of Treated Patients (Stock-Derived)",
+        title=dict(text="Share of Treated Patients (Stock-Derived)", font=dict(color=TITLE_COLOR)),
         xaxis=dict(title="Year", tickmode="linear", dtick=1),
         yaxis_title="Share",
         yaxis_tickformat=".0%",

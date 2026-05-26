@@ -22,7 +22,7 @@ from data.assumptions import CLASS_TREATED_AT_ULTOMIRIS_LAUNCH, DEFAULTS, TARPEY
 from data.competitive_landscape import COMPETITOR_LAUNCH_YEARS, DRUG_ATTRIBUTES
 from viz.analog_overlay import build_analog_overlay
 from viz.conjoint_table import build_weights_chart, render_conjoint_table
-from viz.formatting import fmt_currency, fmt_patients
+from viz.formatting import TITLE_COLOR, fmt_currency, fmt_patients
 from viz.funnel import build_funnel_figure
 from viz.revenue_chart import build_revenue_chart
 from viz.share_chart import build_share_chart
@@ -204,7 +204,10 @@ def _build_source_of_business_chart(
         )
     fig.update_layout(
         barmode="stack",
-        title="Sources of New Ultomiris Patients (Descriptive Attribution)",
+        title=dict(
+            text="Sources of New Ultomiris Patients (Descriptive Attribution)",
+            font=dict(color=TITLE_COLOR),
+        ),
         xaxis=dict(title="Year", tickmode="linear", dtick=1),
         yaxis=dict(title="Share of new starts", tickformat=".0%", range=[0, 1]),
         template="plotly_white",

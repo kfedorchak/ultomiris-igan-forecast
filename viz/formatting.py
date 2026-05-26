@@ -23,6 +23,13 @@ GREY_MEDIUM = "#808080"
 GREY_LIGHT = "#BDBDBD"
 GREY_LIGHTEST = "#E0E0E0"
 
+# Consistent dark near-black for all chart titles and section headers.
+# Plotly's plotly_white default is #2a3f5f (navy-slate) which can look
+# grey-ish next to true-black Streamlit body text — applying this
+# explicitly to every fig title keeps the dashboard's typographic color
+# uniform.
+TITLE_COLOR = "#1F1F1F"
+
 # ──────────────────────────── scenario palette ─────────────────
 # Strong = forest green, Modest = neutral grey, Weak = Alexion red.
 SCENARIO_COLORS: dict[str, str] = {

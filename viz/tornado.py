@@ -8,7 +8,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from core.revenue import run_forecast
-from viz.formatting import ALEXION_BLUE, GREY_MEDIUM, fmt_currency
+from viz.formatting import ALEXION_BLUE, GREY_MEDIUM, TITLE_COLOR, fmt_currency
 
 
 @dataclass(frozen=True)
@@ -137,7 +137,10 @@ def build_tornado_chart(
     ticktext = [fmt_currency(v, scale_precision=0) for v in tickvals]
 
     fig.update_layout(
-        title=f"Sensitivity ({_SCENARIO_TITLE[scenario]}) — base ${base_ev / 1e9:.2f}B",
+        title=dict(
+            text=f"Sensitivity ({_SCENARIO_TITLE[scenario]}) — base ${base_ev / 1e9:.2f}B",
+            font=dict(color=TITLE_COLOR),
+        ),
         xaxis=dict(
             title="Δ from base cumulative EV (USD)",
             tickmode="array",

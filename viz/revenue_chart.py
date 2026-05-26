@@ -5,7 +5,7 @@ import math
 import plotly.graph_objects as go
 
 from core.revenue import YearlyRevenue
-from viz.formatting import SCENARIO_COLORS, ULTOMIRIS_COLOR, fmt_currency
+from viz.formatting import SCENARIO_COLORS, TITLE_COLOR, ULTOMIRIS_COLOR, fmt_currency
 
 
 SCENARIO_LABELS = {
@@ -73,7 +73,7 @@ def build_revenue_chart(
     ticktext = [fmt_currency(v) for v in tickvals]
 
     fig.update_layout(
-        title="US Net Revenue Forecast",
+        title=dict(text="US Net Revenue Forecast", font=dict(color=TITLE_COLOR)),
         xaxis=dict(title="Year", tickmode="linear", dtick=1),
         yaxis=dict(
             title="Net revenue (USD)",

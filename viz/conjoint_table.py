@@ -11,7 +11,7 @@ from core.conjoint import (
     get_drug_attributes_for_year,
     utilities_to_shares,
 )
-from viz.formatting import ULTOMIRIS_COLOR
+from viz.formatting import TITLE_COLOR, ULTOMIRIS_COLOR
 
 
 # Sequential grey -> Alexion-blue colormap for the drug × attribute heatmap.
@@ -51,7 +51,7 @@ def build_weights_chart(weights: dict[str, float]) -> go.Figure:
         )
     )
     fig.update_layout(
-        title="Attribute importance weights",
+        title=dict(text="Attribute importance weights", font=dict(color=TITLE_COLOR)),
         xaxis=dict(title="Weight", tickformat=".0%", range=[0, 0.30]),
         template="plotly_white",
         height=440,
@@ -106,7 +106,8 @@ def render_conjoint_table(
     default_year = year if yr_min <= year <= yr_max else (yr_min + yr_max) // 2
 
     st.markdown(
-        "<div style='font-size: 17px; font-weight: 500; margin-bottom: 0.5rem;'>"
+        f"<div style='font-size: 17px; font-weight: 500; color: {TITLE_COLOR}; "
+        f"margin-bottom: 0.5rem;'>"
         "Drug × attribute scores at the selected year"
         "</div>",
         unsafe_allow_html=True,

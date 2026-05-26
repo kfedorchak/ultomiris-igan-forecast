@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from core.bass_model import bass_cumulative_adoption, fit_bass_to_tarpeyo
-from viz.formatting import GREY_DARK, GREY_MEDIUM, ULTOMIRIS_COLOR
+from viz.formatting import GREY_DARK, GREY_MEDIUM, TITLE_COLOR, ULTOMIRIS_COLOR
 
 
 def build_analog_overlay(
@@ -65,7 +65,7 @@ def build_analog_overlay(
         )
     )
     fig.update_layout(
-        title="Tarpeyo Analog — Bass Diffusion Calibration",
+        title=dict(text="Tarpeyo Analog — Bass Diffusion Calibration", font=dict(color=TITLE_COLOR)),
         xaxis_title="Years since launch",
         yaxis_title="Cumulative patients (same market potential)",
         template="plotly_white",
