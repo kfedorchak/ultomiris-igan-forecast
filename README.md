@@ -2,7 +2,7 @@
 
 Patient-based US revenue forecast for Ultomiris (ravulizumab) in IgA nephropathy (IgAN), built as a portfolio prototype. The model combines disease epidemiology, Bass diffusion calibrated against real Calliditas-disclosed Tarpeyo uptake, conjoint-based share allocation across an 11-drug competitive set, and a phased I CAN Phase III eGFR-readout scenario tree.
 
-**Live app:** [link added once deployed]
+**Live app:** https://ultomiris-igan-forecast.streamlit.app/
 
 ## What the model does
 
